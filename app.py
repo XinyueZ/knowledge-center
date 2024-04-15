@@ -1,26 +1,26 @@
+import asyncio
+import datetime
 import os
-from regex import F
+from typing import Callable, Dict, Iterable, List
+
+import nest_asyncio
 import streamlit as st
-from file_loader import files_uploader
-from utils import pretty_print
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from langchain_text_splitters import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
     SentenceTransformersTokenTextSplitter,
 )
-from typing import Dict, Callable, Iterable, List
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
-from llama_index.legacy.embeddings.langchain import LangchainEmbedding
-from llama_index.core import Settings
 from langchain_text_splitters.base import TextSplitter
-from langchain_core.documents import Document
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.document_loaders import TextLoader
-from langchain_community.vectorstores import FAISS
+from llama_index.core import Settings
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from tqdm.asyncio import tqdm
-import nest_asyncio
-import datetime
-import asyncio
+
+from file_loader import files_uploader
+from utils import pretty_print
 
 nest_asyncio.apply()
 
@@ -31,6 +31,8 @@ st.set_page_config(layout="wide")
 DB_PATH = "./db"
 lc_embedding = NVIDIAEmbeddings(model="nvolveqa_40k")
 Settings.embed_model = LangchainEmbedding(NVIDIAEmbeddings(model="nvolveqa_40k"))
+
+
 
 
 async def langchain_fn(file_fullpath_list: List[str]):
@@ -125,7 +127,7 @@ def dashboard():
 
     for filename in index_files:
         filename_no_ext = filename.split(".")[0]
-        col1, col2, col3 = st.columns(3)
+
         with col1:
             st.write("")
             st.write(filename_no_ext)

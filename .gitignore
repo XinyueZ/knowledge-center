@@ -2,3 +2,5 @@ __pycache__
 .DS_Store
 tmp
 db
+*.db
+vector_db

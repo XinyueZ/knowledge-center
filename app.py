@@ -1,10 +1,10 @@
 import asyncio
 import datetime
 import os
+import shutil
 from typing import Callable, Dict, Iterable, List
 
 import nest_asyncio
-from sqlalchemy import desc
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
@@ -20,16 +20,35 @@ from llama_index.core import Settings
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from tqdm.asyncio import tqdm
 
+from description_crud import del_description, genenerate_and_load_description
 from file_loader import files_uploader
 from utils import pretty_print
 
 nest_asyncio.apply()
 
-# wide screen config for st app
+
 st.set_page_config(layout="wide")
 
+st.markdown(
+    """
+<style>
+button {
+    height: auto;
+    padding-top: 12px !important;
+    padding-bottom: 20px !important;
+}
+code {
+    height: auto;
+    padding-top: 10px !important;
+    padding-bottom: 15px !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
-DB_PATH = "./db"
+
+DB_PATH = "./vector_db"
 lc_embedding = NVIDIAEmbeddings(model="nvolveqa_40k")
 Settings.embed_model = LangchainEmbedding(NVIDIAEmbeddings(model="nvolveqa_40k"))
 
@@ -85,7 +104,7 @@ async def langchain_fn(file_fullpath_list: List[str]):
             st.error("Please provide a name for the collection")
             return
         else:
-            if f"{index_name}.pkl" in os.listdir(DB_PATH):
+            if os.path.exists(DB_PATH) and f"{index_name}.pkl" in os.listdir(DB_PATH):
                 st.error("Duplicate index name")
                 return
 
@@ -99,7 +118,7 @@ async def langchain_fn(file_fullpath_list: List[str]):
                 ]  # flatten the all documents
                 chunks = splitter.split_documents(documents=docs)
                 db = FAISS.from_documents(chunks, lc_embedding)
-                db.save_local(f"{DB_PATH}", index_name=index_name)
+                db.save_local(os.path.join(DB_PATH, index_name))
             st.success("Done!")
 
 
@@ -108,46 +127,54 @@ async def llama_index_fn():
 
 
 def dashboard():
-    # check DB path exists or empty
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
         st.info("No index found")
         return
 
-    # list all pkl (index file) files in the directory
     index_fullpath_list = [
-        os.path.join(DB_PATH, index_file_name)
-        for index_file_name in os.listdir(DB_PATH)
-        if index_file_name.endswith(".pkl")
+        os.path.join(DB_PATH, index_dir_name)
+        for index_dir_name in os.listdir(DB_PATH)
+        if index_dir_name
     ]
-    description_list = []
-    col1, col2, col3 = st.columns(3)
+
+    description_list = genenerate_and_load_description(
+        lc_embedding, index_fullpath_list
+    )
+    pretty_print("Description list", description_list)
+
+    col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88])
 
     with col1:
         st.write("Index")
     with col2:
-        st.write("Created At")
+        st.write("Description")
     with col3:
-        st.write("Op")
+        st.write("Created At")
+    with col4:
+        st.write("Operation")
 
     for index_fullpath in index_fullpath_list:
-        index_filename_no_ext = os.path.basename(index_fullpath).split(".")[0]
-
+        index_dir_name = os.path.basename(index_fullpath)
         with col1:
-            st.write("")
-            st.write(index_filename_no_ext)
+            st.code(index_dir_name, language="markdown")
         with col2:
-            st.write("")
-            # date of creation of the index
+            st.code(
+                description_list[index_fullpath_list.index(index_fullpath)][0],
+                language="markdown",
+            )
+        with col3:
             file_create_time = os.path.getctime(index_fullpath)
-            # to human readable format
             file_create_time = datetime.datetime.fromtimestamp(
                 file_create_time
             ).strftime("%Y-%m-%d %H:%M:%S")
-            st.write(file_create_time)
-        with col3:
-            if st.button("DEL", key=f"{index_filename_no_ext}_delete"):
-                os.remove(index_fullpath)
-                os.remove(f"{DB_PATH}/{index_filename_no_ext}.faiss")
+            st.code(file_create_time, language="markdown")
+        with col4:
+            if st.button(
+                "🚽",
+                key=f"{index_dir_name}_delete",
+            ):
+                shutil.rmtree(index_fullpath)
+                del_description(index_dir_name)
                 st.experimental_rerun()
 
 
@@ -173,6 +200,7 @@ async def main():
             await llm_library_selector_map[llm_library_selector](file_fullpath_list)
         else:
             st.info("Please upload files")
+
     dashboard()
 
 

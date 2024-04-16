@@ -49,11 +49,16 @@ code {
 
 
 DB_PATH = "./vector_db"
+CHUNK_SIZE_DEFAULT = 1000
+CHUNK_SIZE_MIN_VALUE = 1000
+CHUNK_OVERLAP_DEFAULT = 1000
+CHUNK_OVERLAP_MIN_VALUE = 1000
+
 lc_embedding = NVIDIAEmbeddings(model="nvolveqa_40k")
 Settings.embed_model = LangchainEmbedding(NVIDIAEmbeddings(model="nvolveqa_40k"))
 
 
-async def langchain_fn(file_fullpath_list: List[str]):
+async def chunk_and_indexing(file_fullpath_list: List[str]):
     with st.sidebar:
         splitter_selector = st.selectbox(
             "Splitter",
@@ -68,17 +73,29 @@ async def langchain_fn(file_fullpath_list: List[str]):
 
         def _RecursiveCharacterTextSplitter_fn() -> RecursiveCharacterTextSplitter:
             return RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=st.number_input("chunk_size", value=1000, min_value=1000),
+                chunk_size=st.number_input(
+                    "chunk_size",
+                    value=CHUNK_SIZE_DEFAULT,
+                    min_value=CHUNK_SIZE_MIN_VALUE,
+                ),
                 chunk_overlap=st.number_input(
-                    "chunk_overlap", value=1000, min_value=1000
+                    "chunk_overlap",
+                    value=CHUNK_OVERLAP_DEFAULT,
+                    min_value=CHUNK_OVERLAP_MIN_VALUE,
                 ),
             )
 
         def _CharacterTextSplitter_fn() -> CharacterTextSplitter:
             return CharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=st.number_input("chunk_size", value=1000, min_value=1000),
+                chunk_size=st.number_input(
+                    "chunk_size",
+                    value=CHUNK_SIZE_DEFAULT,
+                    min_value=CHUNK_SIZE_MIN_VALUE,
+                ),
                 chunk_overlap=st.number_input(
-                    "chunk_overlap", value=1000, min_value=1000
+                    "chunk_overlap",
+                    value=CHUNK_OVERLAP_DEFAULT,
+                    min_value=CHUNK_OVERLAP_MIN_VALUE,
                 ),
             )
 
@@ -87,7 +104,9 @@ async def langchain_fn(file_fullpath_list: List[str]):
         ):
             return SentenceTransformersTokenTextSplitter.from_tiktoken_encoder(
                 chunk_overlap=st.number_input(
-                    "chunk_overlap", value=1000, min_value=1000
+                    "chunk_overlap",
+                    value=CHUNK_OVERLAP_DEFAULT,
+                    min_value=CHUNK_OVERLAP_MIN_VALUE,
                 ),
             )
 
@@ -122,10 +141,6 @@ async def langchain_fn(file_fullpath_list: List[str]):
             st.success("Done!")
 
 
-async def llama_index_fn():
-    pass
-
-
 def dashboard():
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
         st.info("No index found")
@@ -153,6 +168,12 @@ def dashboard():
     with col4:
         st.write("Operation")
 
+    # sort index_fullpath_list by created time
+    index_fullpath_list = sorted(
+        index_fullpath_list,
+        key=lambda x: os.path.getctime(x),
+        reverse=True,
+    )
     for index_fullpath in index_fullpath_list:
         index_dir_name = os.path.basename(index_fullpath)
         with col1:
@@ -186,18 +207,7 @@ async def main():
 
     with st.sidebar:
         if not (file_fullpath_list is None or len(file_fullpath_list) < 1):
-            llm_library_selector = st.selectbox(
-                "Library",
-                ["LangChain", "Llama-Index"],
-                index=0,
-                key="llm_library_selector",
-            )
-            llm_library_selector_map: Dict[str, Callable[[Iterable[Document]]]] = {
-                "LangChain": langchain_fn,
-                "Llama-Index": llama_index_fn,
-            }
-
-            await llm_library_selector_map[llm_library_selector](file_fullpath_list)
+            await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
 

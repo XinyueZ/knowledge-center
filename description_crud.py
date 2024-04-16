@@ -6,7 +6,9 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 
-from rag import build_rag_chain, rag_llm
+from rag.vanilla_rag import VanillaRAG
+
+rag_selection = {"vanilla": VanillaRAG()}
 
 
 def connect_db() -> sqlite3.Connection:
@@ -89,17 +91,10 @@ def genenerate_and_load_description(
                 allow_dangerous_deserialization=True,
             )
             retriever: BaseRetriever = saved_index.as_retriever()
-            chain = build_rag_chain(
-                rag_llm,
+            description = rag_selection["vanilla"](
+                prompt="Description of the documents",
                 preamble="You're an AI assistant to get the description of the documents briefly.",
-            )
-            description = chain.invoke(
-                {
-                    "prompt": "Description of the documents",
-                    "documents": retriever.invoke(
-                        "Get the description of the documents"
-                    ),
-                }
+                documents=retriever.invoke("Get the description of the documents"),
             )
             insert_description(conn, index_dir_name, description)
 

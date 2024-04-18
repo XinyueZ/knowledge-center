@@ -268,10 +268,9 @@ class AdaptiveRAG(BaseRAG):
 
         fallback_query_engine_tool = self.build_fallback_query_engine_tool()
         query_engine_tools = (
-            # multi_step_query_engine_tools
-            # + [multi_step_query_engine_tools_agent_tool]
-            # +
-            standalone_query_engine_tools
+            multi_step_query_engine_tools
+            + [multi_step_query_engine_tools_agent_tool]
+            + standalone_query_engine_tools
             + [standalone_query_engine_tools_agent_tool]
             + [fallback_query_engine_tool]
         )

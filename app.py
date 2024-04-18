@@ -10,18 +10,17 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
-from langchain_text_splitters import (
-    CharacterTextSplitter,
-    RecursiveCharacterTextSplitter,
-    SentenceTransformersTokenTextSplitter,
-)
+from langchain_text_splitters import (CharacterTextSplitter,
+                                      RecursiveCharacterTextSplitter,
+                                      SentenceTransformersTokenTextSplitter)
 from langchain_text_splitters.base import TextSplitter
-from llama_index.core import Settings
-from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from tqdm.asyncio import tqdm
 
-from description_crud import del_description, genenerate_and_load_description
+from description_crud import (connect_db, del_description,
+                              genenerate_and_load_description,
+                              insert_description)
 from file_loader import files_uploader
+from rag.adaptive_rag import AdaptiveRAG
 from utils import pretty_print
 
 nest_asyncio.apply()
@@ -37,7 +36,6 @@ CHUNK_OVERLAP_DEFAULT = 1000
 CHUNK_OVERLAP_MIN_VALUE = 1000
 
 lc_embedding = NVIDIAEmbeddings(model="nvolveqa_40k")
-Settings.embed_model = LangchainEmbedding(NVIDIAEmbeddings(model="nvolveqa_40k"))
 
 
 async def chunk_and_indexing(file_fullpath_list: List[str]):
@@ -105,7 +103,7 @@ async def chunk_and_indexing(file_fullpath_list: List[str]):
             st.error("Please provide a name for the collection")
             return
         else:
-            if os.path.exists(DB_PATH) and f"{index_name}.pkl" in os.listdir(DB_PATH):
+            if os.path.exists(DB_PATH) and index_name in os.listdir(DB_PATH):
                 st.error("Duplicate index name")
                 return
 
@@ -161,16 +159,19 @@ def dashboard():
         col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88], gap="large")
         index_dir_name = os.path.basename(index_fullpath)
         with col1:
+            st.subheader("")
             st.write(index_dir_name)
         with col2:
             st.write(description_list[index_fullpath_list.index(index_fullpath)][0])
         with col3:
+            st.subheader("")
             file_create_time = os.path.getctime(index_fullpath)
             file_create_time = datetime.datetime.fromtimestamp(
                 file_create_time
             ).strftime("%Y-%m-%d %H:%M:%S")
             st.write(file_create_time)
         with col4:
+            st.subheader("")
             if st.button("🚽", key=f"{index_dir_name}_delete"):
                 shutil.rmtree(index_fullpath)
                 del_description(index_dir_name)
@@ -186,7 +187,45 @@ async def main():
 
     with st.sidebar:
         if not (file_fullpath_list is None or len(file_fullpath_list) < 1):
-            await chunk_and_indexing(file_fullpath_list)
+            approach_selection = st.radio(
+                "Adaptive RAG process or step-by-step",
+                [
+                    "Adaptive RAG Process",
+                    "Step-by-step",
+                ],
+                index=0,
+                key="step_by_step",
+            )
+            if approach_selection == "Adaptive RAG Process":
+                index_name = st.text_input(
+                    "Index name(required, Press Enter to Save)",
+                    placeholder="index name",
+                ).strip()
+                if index_name is None or index_name == "":
+                    st.error("Please provide a name for the collection")
+                else:
+                    if os.path.exists(DB_PATH) and index_name in os.listdir(DB_PATH):
+                        st.error("Duplicate index name")
+                    else:
+                        with st.spinner("Chunk and indexing..."):
+                            apt_rag = AdaptiveRAG(
+                                index_dir=os.path.join(DB_PATH, index_name)
+                            )
+                            apt_rag_ds_list = await apt_rag.load_docs(
+                                file_fullpath_list
+                            )
+                            kwargs = {
+                                "ds_list": apt_rag_ds_list,
+                                "query": "Documents description",
+                            }
+                            res = await apt_rag(**kwargs)
+                            pretty_print("Description", res.response)
+                            db_cnn = connect_db()
+                            insert_description(db_cnn, index_name, res.response)
+                            db_cnn.close()
+                        st.success("Done!")
+            else:
+                await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
 

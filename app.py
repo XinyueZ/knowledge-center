@@ -29,24 +29,6 @@ nest_asyncio.apply()
 
 st.set_page_config(layout="wide")
 
-st.markdown(
-    """
-<style>
-button {
-    height: auto;
-    padding-top: 12px !important;
-    padding-bottom: 20px !important;
-}
-code {
-    height: auto;
-    padding-top: 10px !important;
-    padding-bottom: 15px !important;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
 
 DB_PATH = "./vector_db"
 CHUNK_SIZE_DEFAULT = 1000
@@ -157,16 +139,16 @@ def dashboard():
     )
     pretty_print("Description list", description_list)
 
-    col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88])
+    col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88], gap="large")
 
     with col1:
-        st.write("Index")
+        st.subheader("Index")
     with col2:
-        st.write("Description")
+        st.subheader("Description")
     with col3:
-        st.write("Created At")
+        st.subheader("Created At")
     with col4:
-        st.write("Operation")
+        st.subheader("Operation")
 
     # sort index_fullpath_list by created time
     index_fullpath_list = sorted(
@@ -174,33 +156,30 @@ def dashboard():
         key=lambda x: os.path.getctime(x),
         reverse=True,
     )
+    st.write("---")
     for index_fullpath in index_fullpath_list:
+        col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88], gap="large")
         index_dir_name = os.path.basename(index_fullpath)
         with col1:
-            st.code(index_dir_name, language="markdown")
+            st.write(index_dir_name)
         with col2:
-            st.code(
-                description_list[index_fullpath_list.index(index_fullpath)][0],
-                language="markdown",
-            )
+            st.write(description_list[index_fullpath_list.index(index_fullpath)][0])
         with col3:
             file_create_time = os.path.getctime(index_fullpath)
             file_create_time = datetime.datetime.fromtimestamp(
                 file_create_time
             ).strftime("%Y-%m-%d %H:%M:%S")
-            st.code(file_create_time, language="markdown")
+            st.write(file_create_time)
         with col4:
-            if st.button(
-                "🚽",
-                key=f"{index_dir_name}_delete",
-            ):
+            if st.button("🚽", key=f"{index_dir_name}_delete"):
                 shutil.rmtree(index_fullpath)
                 del_description(index_dir_name)
                 st.experimental_rerun()
+        st.write("---")
 
 
 async def main():
-    st.title("Knowledge Center")
+    st.sidebar.header("Knowledge Center")
 
     file_fullpath_list = files_uploader("# Upload files")
     pretty_print("File fullpath list", file_fullpath_list)

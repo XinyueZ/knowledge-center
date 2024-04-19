@@ -1,4 +1,5 @@
 import asyncio
+from calendar import c
 import os
 import shutil
 from datetime import datetime
@@ -109,9 +110,9 @@ def dashboard(splitter_name: str, embeddings_name: str):
     pretty_print("Dashboard / Index fullpath list", index_fullpath_list)
     pretty_print("Description list", description_list)
 
-    cols = [0.7, 3.0, 1.5, 1.5, 0.7, 0.5]
+    cols = [0.7, 3.0, 1.5, 1.5, 0.7]
     gap = "large"
-    col1, col2, col3, col4, col5, col6 = st.columns(cols, gap=gap)
+    col1, col2, col3, col4, col5 = st.columns(cols, gap=gap)
 
     with col1:
         st.write("")
@@ -128,9 +129,6 @@ def dashboard(splitter_name: str, embeddings_name: str):
     with col5:
         st.write("")
         st.markdown("#### Created At")
-    with col6:
-        st.write("")
-        st.markdown("")
 
     sorted_description_list = sorted(
         description_list,
@@ -145,14 +143,23 @@ def dashboard(splitter_name: str, embeddings_name: str):
         embeddings_name,
         created_datetime,
     ) in sorted_description_list:
-        col1, col2, col3, col4, col5, col6 = st.columns(cols, gap=gap)
+        col1, col2, col3, col4, col5 = st.columns(cols, gap=gap)
 
         with col1:
             st.subheader("")
             st.write(index_name)
+            st.subheader("")
+            c1, c12, c2 = st.columns(3)
+            if c1.button("🚽", key=f"{index_name}_delete", help="Delete index"):
+                shutil.rmtree(os.path.join(DB_PATH, index_name))
+                del_description(index_name)
+                st.experimental_rerun()
+            c12.write("")
+            c2.button("✎", key=f"{index_name}_edit", help="Edit index", type="primary")
         with col2:
             st.subheader("")
             st.write(description)
+            
         with col3:
             st.subheader("")
             st.write(splitter_name)
@@ -165,12 +172,7 @@ def dashboard(splitter_name: str, embeddings_name: str):
                 "%Y-%m-%d %H:%M:%S"
             )
             st.write(created_datetime)
-        with col6:
-            st.subheader("")
-            if st.button("🚽", key=f"{index_name}_delete"):
-                shutil.rmtree(os.path.join(DB_PATH, index_name))
-                del_description(index_name)
-                st.experimental_rerun()
+
         st.write("---")
 
 

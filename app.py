@@ -1,20 +1,17 @@
 import asyncio
-import datetime
 import os
 import shutil
-from typing import Callable, Dict, Iterable, List
+from datetime import datetime
+from typing import Callable, Dict, List
 
 import nest_asyncio
 import streamlit as st
-from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
-from langchain_text_splitters import (CharacterTextSplitter,
-                                      RecursiveCharacterTextSplitter,
-                                      SentenceTransformersTokenTextSplitter)
-from langchain_text_splitters.base import TextSplitter
 from tqdm.asyncio import tqdm
 
+from chunkers import (CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE,
+                      CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
+                      get_chunker_and_embedings_selection)
 from description_crud import (connect_db, del_description,
                               genenerate_and_load_description,
                               insert_description)
@@ -29,72 +26,39 @@ st.set_page_config(layout="wide")
 
 
 DB_PATH = "./vector_db"
-CHUNK_SIZE_DEFAULT = 1000
-CHUNK_SIZE_MIN_VALUE = 1000
-CHUNK_OVERLAP_DEFAULT = 1000
-CHUNK_OVERLAP_MIN_VALUE = 1000
-
-lc_embedding = NVIDIAEmbeddings(model="nvolveqa_40k")
 
 
-async def chunk_and_indexing(file_fullpath_list: List[str]):
+async def chunk_and_indexing(file_fullpath_list: List[str]) -> str:
     with st.sidebar:
-        splitter_selector = st.selectbox(
-            "Splitter",
+        chunker_selector = st.selectbox(
+            "Chunker",
             [
-                "RecursiveCharacterTextSplitter",
-                "CharacterTextSplitter",
-                "SentenceTransformersTokenTextSplitter",
+                "RecursiveCharacterTextChunker",
+                "CharacterTextChunker",
+                "SentenceTransformersTokenTextChunker",
             ],
             index=0,
             key="splitter_selector",
         )
-
-        def _RecursiveCharacterTextSplitter_fn() -> RecursiveCharacterTextSplitter:
-            return RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=st.number_input(
-                    "chunk_size",
-                    value=CHUNK_SIZE_DEFAULT,
-                    min_value=CHUNK_SIZE_MIN_VALUE,
-                ),
-                chunk_overlap=st.number_input(
-                    "chunk_overlap",
-                    value=CHUNK_OVERLAP_DEFAULT,
-                    min_value=CHUNK_OVERLAP_MIN_VALUE,
-                ),
+        chunk_size = None
+        if "Sentence" not in chunker_selector:
+            chunk_size = st.number_input(
+                "chunk_size",
+                value=CHUNK_SIZE_DEFAULT,
+                min_value=CHUNK_SIZE_MIN_VALUE,
             )
 
-        def _CharacterTextSplitter_fn() -> CharacterTextSplitter:
-            return CharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=st.number_input(
-                    "chunk_size",
-                    value=CHUNK_SIZE_DEFAULT,
-                    min_value=CHUNK_SIZE_MIN_VALUE,
-                ),
-                chunk_overlap=st.number_input(
-                    "chunk_overlap",
-                    value=CHUNK_OVERLAP_DEFAULT,
-                    min_value=CHUNK_OVERLAP_MIN_VALUE,
-                ),
-            )
+        chunk_overlap = st.number_input(
+            "chunk_overlap",
+            value=CHUNK_OVERLAP_DEFAULT,
+            min_value=CHUNK_OVERLAP_MIN_VALUE,
+        )
 
-        def _SentenceTransformersTokenTextSplitter_fn() -> (
-            SentenceTransformersTokenTextSplitter
-        ):
-            return SentenceTransformersTokenTextSplitter.from_tiktoken_encoder(
-                chunk_overlap=st.number_input(
-                    "chunk_overlap",
-                    value=CHUNK_OVERLAP_DEFAULT,
-                    min_value=CHUNK_OVERLAP_MIN_VALUE,
-                ),
-            )
-
-        splitter_selector_map: Dict[str, Callable[[], TextSplitter]] = {
-            "RecursiveCharacterTextSplitter": _RecursiveCharacterTextSplitter_fn,
-            "CharacterTextSplitter": _CharacterTextSplitter_fn,
-            "SentenceTransformersTokenTextSplitter": _SentenceTransformersTokenTextSplitter_fn,
-        }
-        splitter = splitter_selector_map[splitter_selector]()
+        chunker_and_embedings_selection = get_chunker_and_embedings_selection(
+            chunk_overlap, chunk_size
+        )
+        chunker = chunker_and_embedings_selection[chunker_selector][0]()
+        embeddings_name = chunker_and_embedings_selection[chunker_selector][1]
         index_name = st.text_input(
             "Index name(required, Press Enter to Save)", placeholder="index name"
         ).strip()
@@ -114,16 +78,17 @@ async def chunk_and_indexing(file_fullpath_list: List[str]):
                 docs = [
                     doc for docs in docs_list for doc in docs
                 ]  # flatten the all documents
-                chunks = splitter.split_documents(documents=docs)
-                Chroma.from_documents(
-                    chunks,
-                    lc_embedding,
-                    persist_directory=(os.path.join(DB_PATH, index_name)),
+
+                chunker(
+                    documents=docs,
+                    persist_directory=DB_PATH,
+                    index_name=index_name,
                 )
             st.success("Done!")
+    return embeddings_name
 
 
-def dashboard():
+def dashboard(embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
         st.info("No index found")
         return
@@ -135,48 +100,65 @@ def dashboard():
     ]
 
     description_list = genenerate_and_load_description(
-        os.path.join(DB_PATH), lc_embedding, index_fullpath_list
+        os.path.join(DB_PATH), embeddings_name, index_fullpath_list
     )
+    pretty_print("Dashboard / Index fullpath list", index_fullpath_list)
     pretty_print("Description list", description_list)
 
-    col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88], gap="large")
+    cols = [0.7, 3.0, 1.3, 0.7, 0.5]
+    gap = "large"
+    col1, col2, col3, col4, col5 = st.columns(cols, gap=gap)
 
     with col1:
-        st.subheader("Index")
+        st.write("")
+        st.markdown("#### Index")
     with col2:
-        st.subheader("Description")
+        st.write("")
+        st.markdown("#### Description")
     with col3:
-        st.subheader("Created At")
+        st.write("")
+        st.markdown("#### Embedding Model")
     with col4:
-        st.subheader("Operation")
+        st.write("")
+        st.markdown("#### Created At")
+    with col5:
+        st.write("")
+        st.markdown("")
 
-    # sort index_fullpath_list by created time
-    index_fullpath_list = sorted(
-        index_fullpath_list,
-        key=lambda x: os.path.getctime(x),
+    sorted_description_list = sorted(
+        description_list,
+        key=lambda x: datetime.strptime(x[-1], "%Y-%m-%d %H:%M:%S.%f"),
         reverse=True,
     )
     st.write("---")
-    for index_fullpath in index_fullpath_list:
-        col1, col2, col3, col4 = st.columns([0.7, 7, 1.3, 0.88], gap="large")
-        index_dir_name = os.path.basename(index_fullpath)
+    for (
+        index_name,
+        description,
+        embeddings_name,
+        created_datetime,
+    ) in sorted_description_list:
+        col1, col2, col3, col4, col5 = st.columns(cols, gap=gap)
+
         with col1:
             st.subheader("")
-            st.write(index_dir_name)
+            st.write(index_name)
         with col2:
-            st.write(description_list[index_fullpath_list.index(index_fullpath)][0])
+            st.subheader("")
+            st.write(description)
         with col3:
             st.subheader("")
-            file_create_time = os.path.getctime(index_fullpath)
-            file_create_time = datetime.datetime.fromtimestamp(
-                file_create_time
-            ).strftime("%Y-%m-%d %H:%M:%S")
-            st.write(file_create_time)
+            st.write(embeddings_name)
         with col4:
             st.subheader("")
-            if st.button("🚽", key=f"{index_dir_name}_delete"):
-                shutil.rmtree(index_fullpath)
-                del_description(index_dir_name)
+            created_datetime = datetime.fromisoformat(created_datetime).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            st.write(created_datetime)
+        with col5:
+            st.subheader("")
+            if st.button("🚽", key=f"{index_name}_delete"):
+                shutil.rmtree(os.path.join(DB_PATH, index_name))
+                del_description(index_name)
                 st.experimental_rerun()
         st.write("---")
 
@@ -187,6 +169,7 @@ async def main():
     file_fullpath_list = files_uploader("# Upload files")
     pretty_print("File fullpath list", file_fullpath_list)
 
+    embeddings_name = None
     with st.sidebar:
         if not (file_fullpath_list is None or len(file_fullpath_list) < 1):
             approach_selection = st.radio(
@@ -227,11 +210,11 @@ async def main():
                             db_cnn.close()
                         st.success("Done!")
             else:
-                await chunk_and_indexing(file_fullpath_list)
+                embeddings_name = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
 
-    dashboard()
+    dashboard(embeddings_name)
 
 
 if __name__ == "__main__":

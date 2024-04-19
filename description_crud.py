@@ -2,6 +2,7 @@ import os
 import sqlite3
 from typing import List
 
+from langchain_chroma import Chroma
 from langchain_community.vectorstores import FAISS
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
@@ -78,17 +79,16 @@ def fetch_descriptions(conn):
 
 
 def genenerate_and_load_description(
-    embed: Embeddings, index_fullpath_list: List[str]
+    persist_root_directory, embed: Embeddings, index_fullpath_list: List[str]
 ) -> List[str]:
     conn = connect_db()
     all_descriptions = []
     for index_fullpath in index_fullpath_list:
         index_dir_name = os.path.basename(index_fullpath)
         if not has_index_description(conn, index_dir_name):
-            saved_index = FAISS.load_local(
-                index_fullpath,
-                embed,
-                allow_dangerous_deserialization=True,
+            saved_index = Chroma(
+                persist_directory=os.path.join(persist_root_directory, index_dir_name),
+                embedding_function=embed,
             )
             retriever: BaseRetriever = saved_index.as_retriever()
             description = rag_selection["vanilla"](

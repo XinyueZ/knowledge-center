@@ -6,9 +6,8 @@ from typing import Callable, Dict, Iterable, List
 
 import nest_asyncio
 import streamlit as st
+from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_community.vectorstores import FAISS
-from langchain_core.documents import Document
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from langchain_text_splitters import (CharacterTextSplitter,
                                       RecursiveCharacterTextSplitter,
@@ -116,8 +115,11 @@ async def chunk_and_indexing(file_fullpath_list: List[str]):
                     doc for docs in docs_list for doc in docs
                 ]  # flatten the all documents
                 chunks = splitter.split_documents(documents=docs)
-                db = FAISS.from_documents(chunks, lc_embedding)
-                db.save_local(os.path.join(DB_PATH, index_name))
+                Chroma.from_documents(
+                    chunks,
+                    lc_embedding,
+                    persist_directory=(os.path.join(DB_PATH, index_name)),
+                )
             st.success("Done!")
 
 
@@ -133,7 +135,7 @@ def dashboard():
     ]
 
     description_list = genenerate_and_load_description(
-        lc_embedding, index_fullpath_list
+        os.path.join(DB_PATH), lc_embedding, index_fullpath_list
     )
     pretty_print("Description list", description_list)
 

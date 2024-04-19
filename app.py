@@ -1,9 +1,9 @@
 import asyncio
-from calendar import c
 import os
 import shutil
+from calendar import c
 from datetime import datetime
-from typing import Callable, Dict, List, Tuple
+from typing import List, Tuple
 
 import nest_asyncio
 import streamlit as st
@@ -13,11 +13,9 @@ from tqdm.asyncio import tqdm
 from knowledge_center.chunkers import (
     CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
     CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
-from knowledge_center.description_crud import (connect_db, del_description,
-                                               genenerate_and_load_description,
-                                               insert_description)
+from knowledge_center.description_crud import (del_description,
+                                               genenerate_and_load_description)
 from knowledge_center.file_loader import files_uploader
-from knowledge_center.rags.adaptive_rag import AdaptiveRAG
 from knowledge_center.utils import pretty_print
 
 nest_asyncio.apply()
@@ -159,7 +157,7 @@ def dashboard(splitter_name: str, embeddings_name: str):
         with col2:
             st.subheader("")
             st.write(description)
-            
+
         with col3:
             st.subheader("")
             st.write(splitter_name)
@@ -185,48 +183,9 @@ async def main():
     splitter_embeddings = None
     with st.sidebar:
         if not (file_fullpath_list is None or len(file_fullpath_list) < 1):
-            approach_selection = st.radio(
-                "Adaptive RAG process or step-by-step",
-                [
-                    "Adaptive RAG Process",
-                    "Step-by-step",
-                ],
-                index=0,
-                key="step_by_step",
-            )
-            if approach_selection == "Adaptive RAG Process":
-                index_name = st.text_input(
-                    "Index name(required, Press Enter to Save)",
-                    placeholder="index name",
-                ).strip()
-                if index_name is None or index_name == "":
-                    st.error("Please provide a name for the collection")
-                else:
-                    if os.path.exists(DB_PATH) and index_name in os.listdir(DB_PATH):
-                        st.error("Duplicate index name")
-                    else:
-                        with st.spinner("Chunk and indexing..."):
-                            apt_rag = AdaptiveRAG(
-                                index_dir=os.path.join(DB_PATH, index_name)
-                            )
-                            apt_rag_ds_list = await apt_rag.load_docs(
-                                file_fullpath_list
-                            )
-                            kwargs = {
-                                "ds_list": apt_rag_ds_list,
-                                "query": "Documents description",
-                            }
-                            res = await apt_rag(**kwargs)
-                            pretty_print("Description", res.response)
-                            db_cnn = connect_db()
-                            insert_description(db_cnn, index_name, res.response)
-                            db_cnn.close()
-                        st.success("Done!")
-            else:
-                splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
+            splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
-
     dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
 
 

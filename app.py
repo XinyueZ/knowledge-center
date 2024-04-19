@@ -2,7 +2,7 @@ import asyncio
 import os
 import shutil
 from datetime import datetime
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 import nest_asyncio
 import streamlit as st
@@ -11,7 +11,7 @@ from tqdm.asyncio import tqdm
 
 from chunkers import (CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE,
                       CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
-                      get_chunker_and_embedings_selection)
+                      get_chunker_splitter_embedings_selection)
 from description_crud import (connect_db, del_description,
                               genenerate_and_load_description,
                               insert_description)
@@ -28,7 +28,7 @@ st.set_page_config(layout="wide")
 DB_PATH = "./vector_db"
 
 
-async def chunk_and_indexing(file_fullpath_list: List[str]) -> str:
+async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
     with st.sidebar:
         chunker_selector = st.selectbox(
             "Chunker",
@@ -54,11 +54,12 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> str:
             min_value=CHUNK_OVERLAP_MIN_VALUE,
         )
 
-        chunker_and_embedings_selection = get_chunker_and_embedings_selection(
+        chunker_and_embedings_selection = get_chunker_splitter_embedings_selection(
             chunk_overlap, chunk_size
         )
         chunker = chunker_and_embedings_selection[chunker_selector][0]()
-        embeddings_name = chunker_and_embedings_selection[chunker_selector][1]
+        splitter_name = chunker_and_embedings_selection[chunker_selector][1]
+        embeddings_name = chunker_and_embedings_selection[chunker_selector][2]
         index_name = st.text_input(
             "Index name(required, Press Enter to Save)", placeholder="index name"
         ).strip()
@@ -85,10 +86,10 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> str:
                     index_name=index_name,
                 )
             st.success("Done!")
-    return embeddings_name
+    return splitter_name, embeddings_name
 
 
-def dashboard(embeddings_name: str):
+def dashboard(splitter_name: str, embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
         st.info("No index found")
         return
@@ -100,14 +101,17 @@ def dashboard(embeddings_name: str):
     ]
 
     description_list = genenerate_and_load_description(
-        os.path.join(DB_PATH), embeddings_name, index_fullpath_list
+        os.path.join(DB_PATH),
+        splitter_name,
+        embeddings_name,
+        index_fullpath_list,
     )
     pretty_print("Dashboard / Index fullpath list", index_fullpath_list)
     pretty_print("Description list", description_list)
 
-    cols = [0.7, 3.0, 1.3, 0.7, 0.5]
+    cols = [0.7, 3.0, 1.5, 1.5, 0.7, 0.5]
     gap = "large"
-    col1, col2, col3, col4, col5 = st.columns(cols, gap=gap)
+    col1, col2, col3, col4, col5, col6 = st.columns(cols, gap=gap)
 
     with col1:
         st.write("")
@@ -117,11 +121,14 @@ def dashboard(embeddings_name: str):
         st.markdown("#### Description")
     with col3:
         st.write("")
-        st.markdown("#### Embedding Model")
+        st.markdown("#### Splitter")
     with col4:
         st.write("")
-        st.markdown("#### Created At")
+        st.markdown("#### Embedding Model")
     with col5:
+        st.write("")
+        st.markdown("#### Created At")
+    with col6:
         st.write("")
         st.markdown("")
 
@@ -134,10 +141,11 @@ def dashboard(embeddings_name: str):
     for (
         index_name,
         description,
+        splitter_name,
         embeddings_name,
         created_datetime,
     ) in sorted_description_list:
-        col1, col2, col3, col4, col5 = st.columns(cols, gap=gap)
+        col1, col2, col3, col4, col5, col6 = st.columns(cols, gap=gap)
 
         with col1:
             st.subheader("")
@@ -147,14 +155,17 @@ def dashboard(embeddings_name: str):
             st.write(description)
         with col3:
             st.subheader("")
-            st.write(embeddings_name)
+            st.write(splitter_name)
         with col4:
+            st.subheader("")
+            st.write(embeddings_name)
+        with col5:
             st.subheader("")
             created_datetime = datetime.fromisoformat(created_datetime).strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
             st.write(created_datetime)
-        with col5:
+        with col6:
             st.subheader("")
             if st.button("🚽", key=f"{index_name}_delete"):
                 shutil.rmtree(os.path.join(DB_PATH, index_name))
@@ -169,7 +180,7 @@ async def main():
     file_fullpath_list = files_uploader("# Upload files")
     pretty_print("File fullpath list", file_fullpath_list)
 
-    embeddings_name = None
+    splitter_embeddings = None
     with st.sidebar:
         if not (file_fullpath_list is None or len(file_fullpath_list) < 1):
             approach_selection = st.radio(
@@ -210,11 +221,11 @@ async def main():
                             db_cnn.close()
                         st.success("Done!")
             else:
-                embeddings_name = await chunk_and_indexing(file_fullpath_list)
+                splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
 
-    dashboard(embeddings_name)
+    dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
 
 
 if __name__ == "__main__":

@@ -28,11 +28,11 @@ embeddings_selection: [str, Embeddings] = {
 }
 
 
-def get_chunker_and_embedings_selection(
+def get_chunker_splitter_embedings_selection(
     chunk_overlap, chunk_size=None
-) -> Dict[str, Tuple[Callable[[], TextSplitter], str]]:
-    chunker_and_embedings_selection: Dict[
-        str, Tuple[Callable[[], TextSplitter], str]
+) -> Dict[str, Tuple[Callable[[], TextSplitter], str, str]]:
+    chunker_splitter_embedings_selection: Dict[
+        str, Tuple[Callable[[], TextSplitter], str, str]
     ] = {
         "RecursiveCharacterTextChunker": (
             lambda _=None: RecursiveCharacterTextChunker(
@@ -40,6 +40,7 @@ def get_chunker_and_embedings_selection(
                 chunk_overlap=chunk_overlap,
                 embeddings=embeddings_selection["NVIDIAEmbeddings"],
             ),
+            "RecursiveCharacterTextSplitter",
             "NVIDIAEmbeddings",
         ),
         "CharacterTextChunker": (
@@ -48,6 +49,7 @@ def get_chunker_and_embedings_selection(
                 chunk_overlap=chunk_overlap,
                 embeddings=embeddings_selection["NVIDIAEmbeddings"],
             ),
+            "CharacterTextSplitter",
             "NVIDIAEmbeddings",
         ),
         "SentenceTransformersTokenTextChunker": (
@@ -55,7 +57,8 @@ def get_chunker_and_embedings_selection(
                 chunk_overlap=chunk_overlap,
                 embeddings=embeddings_selection["SentenceTransformerEmbeddings"],
             ),
+            "SentenceTransformersTokenTextSplitter",
             "SentenceTransformerEmbeddings",
         ),
     }
-    return chunker_and_embedings_selection
+    return chunker_splitter_embedings_selection

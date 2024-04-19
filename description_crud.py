@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import datetime
 from typing import List, Tuple
 
 from langchain_chroma import Chroma
@@ -7,7 +8,6 @@ from langchain_core.retrievers import BaseRetriever
 
 from chunkers import embeddings_selection
 from rag.vanilla_rag import VanillaRAG
-from datetime import datetime
 
 rag_selection = {"vanilla": VanillaRAG()}
 
@@ -22,6 +22,7 @@ def connect_db() -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS descriptions (
             index_name TEXT PRIMARY KEY,
             description TEXT NOT NULL,
+            splitter_name TEXT NOT NULL,
             embeddings_name TEXT NOT NULL, 
             created_datetime TEXT NOT NULL
         );
@@ -32,15 +33,19 @@ def connect_db() -> sqlite3.Connection:
 
 
 def insert_description(
-    conn: sqlite3.Connection, index_name: str, description: str, embeddings_name: str
+    conn: sqlite3.Connection,
+    index_name: str,
+    description: str,
+    splitter_name: str,
+    embeddings_name: str,
 ):
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT OR IGNORE INTO descriptions (index_name, description, embeddings_name, created_datetime)
-        VALUES (?, ?, ?, ?);
+        INSERT OR IGNORE INTO descriptions (index_name, description, splitter_name, embeddings_name, created_datetime)
+        VALUES (?, ?, ?, ?, ?);
     """,
-        (index_name, description, embeddings_name, datetime.now()),
+        (index_name, description, splitter_name, embeddings_name, datetime.now()),
     )
     conn.commit()
 
@@ -85,7 +90,10 @@ def fetch_descriptions(conn: sqlite3.Connection):
 
 
 def genenerate_and_load_description(
-    persist_directory: str, embeddings_name: str, index_fullpath_list: List[str]
+    persist_directory: str,
+    splitter_name,
+    embeddings_name: str,
+    index_fullpath_list: List[str],
 ) -> List[Tuple[str, str]]:
     conn = connect_db()
     all_descriptions = []
@@ -103,13 +111,19 @@ def genenerate_and_load_description(
                 preamble="You're an AI assistant to get the description of the documents briefly.",
                 documents=retriever.invoke("Get the description of the documents"),
             )
-            insert_description(conn, index_dir_name, description, embeddings_name)
+            insert_description(
+                conn,
+                index_dir_name,
+                description,
+                splitter_name,
+                embeddings_name,
+            )
 
-        index_name, description, embeddings_name, created_datetime = (
+        index_name, description, splitter_name, embeddings_name, created_datetime = (
             fetch_description_by_index(conn, index_dir_name)
         )
         all_descriptions.append(
-            (index_name, description, embeddings_name, created_datetime)
+            (index_name, description, splitter_name, embeddings_name, created_datetime)
         )
     conn.close()
     return all_descriptions

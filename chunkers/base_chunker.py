@@ -25,10 +25,11 @@ class BaseChunker:
         index_name: str,
     ) -> None:
         chunks = self.create_chunks(documents)
+        persist_index_directory = os.path.join(persist_directory, index_name)
         Chroma.from_documents(
             chunks,
             self.embeddings,
-            persist_directory=os.path.join(persist_directory, index_name),
+            persist_directory=persist_index_directory,
         )
 
 

@@ -9,15 +9,15 @@ import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from tqdm.asyncio import tqdm
 
-from chunkers import (CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE,
-                      CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
-                      get_chunker_splitter_embedings_selection)
-from description_crud import (connect_db, del_description,
-                              genenerate_and_load_description,
-                              insert_description)
-from file_loader import files_uploader
-from rag.adaptive_rag import AdaptiveRAG
-from utils import pretty_print
+from knowledge_center.chunkers import (
+    CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
+    CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
+from knowledge_center.description_crud import (connect_db, del_description,
+                                               genenerate_and_load_description,
+                                               insert_description)
+from knowledge_center.file_loader import files_uploader
+from knowledge_center.rags.adaptive_rag import AdaptiveRAG
+from knowledge_center.utils import pretty_print
 
 nest_asyncio.apply()
 

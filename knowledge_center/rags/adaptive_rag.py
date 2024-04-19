@@ -10,7 +10,6 @@ from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.core.indices.query.query_transform.base import \
     StepDecomposeQueryTransform
-from completions.vanilla_query_engine import VanillaQueryEngine
 from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor.metadata_replacement import \
     MetadataReplacementPostProcessor
@@ -32,15 +31,15 @@ from llama_index.llms.groq import Groq
 from llama_index.llms.openai import OpenAI
 from tqdm.asyncio import tqdm
 
-from rag.base_rag import BaseRAG
-from utils import VERBOSE, pretty_print
+from knowledge_center.completions.vanilla_query_engine import \
+    VanillaQueryEngine
+from knowledge_center.rags.base_rag import BaseRAG
+from knowledge_center.utils import VERBOSE, pretty_print
 
 WIN_SZ = 3
 SIM_TOP_K = 5
 RERANK_TOP_K = 3
 N_MULTI_STEPS = 5
-
-
 
 
 @dataclass

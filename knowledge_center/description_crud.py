@@ -6,8 +6,8 @@ from typing import List, Tuple
 from langchain_chroma import Chroma
 from langchain_core.retrievers import BaseRetriever
 
-from chunkers import embeddings_selection
-from rag.vanilla_rag import VanillaRAG
+from knowledge_center.chunkers import embeddings_selection
+from knowledge_center.rags.vanilla_rag import VanillaRAG
 
 rag_selection = {"vanilla": VanillaRAG()}
 

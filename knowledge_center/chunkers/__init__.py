@@ -1,17 +1,19 @@
-from langchain_community.embeddings.sentence_transformer import (
-    SentenceTransformerEmbeddings,
-)
+from typing import Callable, Dict, Tuple
+
+from langchain_community.embeddings.sentence_transformer import \
+    SentenceTransformerEmbeddings
 from langchain_core.embeddings import Embeddings
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
-from typing import Callable, Dict, Tuple
-from chunkers.character_text_chunker import CharacterTextChunker
-from chunkers.recursive_character_text_chunker import RecursiveCharacterTextChunker
-from chunkers.sentence_transformers_token_text_chunker import (
-    SentenceTransformersTokenTextChunker,
-)
-from chunkers.sentence_window_chunker import SentenceWindowChunker
-
 from langchain_text_splitters.base import TextSplitter
+
+from knowledge_center.chunkers.character_text_chunker import \
+    CharacterTextChunker
+from knowledge_center.chunkers.recursive_character_text_chunker import \
+    RecursiveCharacterTextChunker
+from knowledge_center.chunkers.sentence_transformers_token_text_chunker import \
+    SentenceTransformersTokenTextChunker
+from knowledge_center.chunkers.sentence_window_chunker import \
+    SentenceWindowChunker
 
 CHUNK_SIZE_DEFAULT = 1000
 CHUNK_SIZE_MIN_VALUE = 1000

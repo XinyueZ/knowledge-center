@@ -1,8 +1,17 @@
+import os
+import sys
 from typing import List
 
 from langchain_core.documents import Document
 
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
+)
+
 from knowledge_center.rags.vanilla_rag import VanillaRAG
+from knowledge_center.utils import pretty_print
 
 
 class VanillaDocsQueryChain:
@@ -25,7 +34,9 @@ def main():
         Document("This is a document of Tom and Jerry"),
     ]
     query_chain = VanillaDocsQueryChain()
-    print(query_chain(docs))
+    query_res = query_chain(docs)
+
+    pretty_print("query_res", query_res)
 
 
 if __name__ == "__main__":

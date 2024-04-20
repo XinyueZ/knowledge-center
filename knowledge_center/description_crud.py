@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 from langchain_chroma import Chroma
 from langchain_core.retrievers import BaseRetriever
+from tqdm.asyncio import tqdm
 
 from knowledge_center.chunkers import embeddings_selection
 from knowledge_center.rags.vanilla_rag import VanillaRAG
@@ -89,43 +90,56 @@ def fetch_descriptions(conn: sqlite3.Connection):
     return cursor.fetchall()
 
 
-def genenerate_and_load_description(
+async def _generate_description(
+    conn: sqlite3.Connection,
+    persist_directory: str,
+    splitter_name: str,
+    embeddings_name: str,
+    index_fullpath: str,
+) -> Tuple[str, str, str, str, str]:
+    index_dir_name = os.path.basename(index_fullpath)
+    if not has_index_description(conn, index_dir_name):
+        embed = embeddings_selection[embeddings_name]
+        saved_index = Chroma(
+            collection_name=index_dir_name,
+            persist_directory=os.path.join(persist_directory, index_dir_name),
+            embedding_function=embed,
+        )
+        retriever: BaseRetriever = saved_index.as_retriever()
+        description = rag_selection["vanilla"](
+            prompt="Description of the documents",
+            preamble="You're an AI assistant to get the description of the documents briefly.",
+            documents=retriever.invoke("Get the description of the documents"),
+        )
+        insert_description(
+            conn,
+            index_dir_name,
+            description,
+            splitter_name,
+            embeddings_name,
+        )
+
+    index_name, description, splitter_name, embeddings_name, created_datetime = (
+        fetch_description_by_index(conn, index_dir_name)
+    )
+    return index_name, description, splitter_name, embeddings_name, created_datetime
+
+
+async def genenerate_and_load_description(
     persist_directory: str,
     splitter_name,
     embeddings_name: str,
     index_fullpath_list: List[str],
 ) -> List[Tuple[str, str]]:
     conn = connect_db()
-    all_descriptions = []
-    for index_fullpath in index_fullpath_list:
-        index_dir_name = os.path.basename(index_fullpath)
-        if not has_index_description(conn, index_dir_name):
-            embed = embeddings_selection[embeddings_name]
-            saved_index = Chroma(
-                collection_name=index_dir_name,  # Notice to set collection_name, otherwise it will create a new db when other lib (ie. llama_index) created with another collection-name.
-                persist_directory=os.path.join(persist_directory, index_dir_name),
-                embedding_function=embed,
-            )
-            retriever: BaseRetriever = saved_index.as_retriever()
-            description = rag_selection["vanilla"](
-                prompt="Description of the documents",
-                preamble="You're an AI assistant to get the description of the documents briefly.",
-                documents=retriever.invoke("Get the description of the documents"),
-            )
-            insert_description(
-                conn,
-                index_dir_name,
-                description,
-                splitter_name,
-                embeddings_name,
-            )
+    tasks = [
+        _generate_description(
+            conn, persist_directory, splitter_name, embeddings_name, index_fullpath
+        )
+        for index_fullpath in index_fullpath_list
+    ]
 
-        index_name, description, splitter_name, embeddings_name, created_datetime = (
-            fetch_description_by_index(conn, index_dir_name)
-        )
-        all_descriptions.append(
-            (index_name, description, splitter_name, embeddings_name, created_datetime)
-        )
+    all_descriptions = await tqdm.gather(*tasks)
     conn.close()
     return all_descriptions
 

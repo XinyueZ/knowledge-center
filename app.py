@@ -1,7 +1,6 @@
 import asyncio
 import os
 import shutil
-from calendar import c
 from datetime import datetime
 from typing import List, Tuple
 
@@ -89,7 +88,7 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
     return splitter_name, embeddings_name
 
 
-def dashboard(splitter_name: str, embeddings_name: str):
+async def dashboard(splitter_name: str, embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
         st.subheader("Involving model Keys")
         st.code(
@@ -114,7 +113,7 @@ export CO_API_KEY="zFiHtBT........."
         if index_dir_name
     ]
 
-    description_list = genenerate_and_load_description(
+    description_list = await genenerate_and_load_description(
         os.path.join(DB_PATH),
         splitter_name,
         embeddings_name,
@@ -207,7 +206,7 @@ async def main():
             splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
-    dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
+    await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
 
 
 if __name__ == "__main__":

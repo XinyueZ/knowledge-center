@@ -34,6 +34,7 @@ class BaseChunker:
         Chroma.from_documents(
             chunks,
             self.embeddings,
+            collection_name=index_name,
             persist_directory=persist_index_directory,
         )
 

@@ -10,10 +10,16 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from tqdm.asyncio import tqdm
 
 from knowledge_center.chunkers import (
-    CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
-    CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
-from knowledge_center.description_crud import (del_description,
-                                               genenerate_and_load_description)
+    CHUNK_OVERLAP_DEFAULT,
+    CHUNK_OVERLAP_MIN_VALUE,
+    CHUNK_SIZE_DEFAULT,
+    CHUNK_SIZE_MIN_VALUE,
+    get_chunker_splitter_embedings_selection,
+)
+from knowledge_center.description_crud import (
+    del_description,
+    genenerate_and_load_description,
+)
 from knowledge_center.file_loader import files_uploader
 from knowledge_center.utils import pretty_print
 
@@ -163,21 +169,15 @@ export CO_API_KEY="zFiHtBT........."
             st.subheader("")
 
             if st.button(
-                "🚽", key=f"{index_name}_delete", help="Delete index", type="primary"
+                "🗑️", key=f"{index_name}_delete", help="Delete index", type="primary"
             ):
                 shutil.rmtree(os.path.join(DB_PATH, index_name))
                 del_description(index_name)
                 st.experimental_rerun()
         with col2:
-
-            st.text_area(
-                label="",
-                value=description,
-                placeholder="Description",
-                height=200,
-                key=f"{index_name}_description",
-            )
-
+            st.subheader("")
+            st.write(description)
+            st.button("✨", help="smart update", key=f"{index_name}_update")
         with col3:
             st.subheader("")
             st.write(splitter_name)

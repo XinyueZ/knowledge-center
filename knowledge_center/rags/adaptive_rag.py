@@ -10,11 +10,10 @@ from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.indices.document_summary.base import DocumentSummaryIndex
 from llama_index.core.indices.query.query_transform.base import \
     StepDecomposeQueryTransform
-from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor.metadata_replacement import \
     MetadataReplacementPostProcessor
-from llama_index.core.query_engine import (BaseQueryEngine, CustomQueryEngine,
+from llama_index.core.query_engine import (BaseQueryEngine,
                                            MultiStepQueryEngine,
                                            RetrieverQueryEngine)
 from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
@@ -32,22 +31,15 @@ from llama_index.llms.groq import Groq
 from llama_index.llms.openai import OpenAI
 from tqdm.asyncio import tqdm
 
-from rag.base_rag import BaseRAG
-from utils import VERBOSE, pretty_print
+from knowledge_center.completions.vanilla_query_engine import \
+    VanillaQueryEngine
+from knowledge_center.rags.base_rag import BaseRAG
+from knowledge_center.utils import VERBOSE, pretty_print
 
 WIN_SZ = 3
 SIM_TOP_K = 5
 RERANK_TOP_K = 3
 N_MULTI_STEPS = 5
-
-
-class LLMQueryEngine(CustomQueryEngine):
-    """RAG String Query Engine."""
-
-    llm: LLM
-
-    def custom_query(self, query_str: str):
-        return str(self.llm.complete(query_str))
 
 
 @dataclass
@@ -238,7 +230,7 @@ class AdaptiveRAG(BaseRAG):
 
     def build_fallback_query_engine_tool(self) -> QueryEngineTool:
         return QueryEngineTool(
-            query_engine=LLMQueryEngine(llm=self.general_llm),
+            query_engine=VanillaQueryEngine(llm=self.general_llm),
             metadata=ToolMetadata(
                 name="General queries as fallback",
                 description=(

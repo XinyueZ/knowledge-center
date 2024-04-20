@@ -1,7 +1,7 @@
 from typing import List
 import streamlit as st
 import os
-from utils import pretty_print
+from knowledge_center.utils import pretty_print
 
 
 def files_uploader(prompt: str, storage_dir: str = "./tmp") -> List[str]:

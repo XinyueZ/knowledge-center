@@ -1,9 +1,10 @@
-from rag.base_rag import BaseRAG
 from langchain_cohere import ChatCohere
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableSerializable
+
+from knowledge_center.rags.base_rag import BaseRAG
 
 
 class VanillaRAG(BaseRAG):

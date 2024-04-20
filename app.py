@@ -90,7 +90,21 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
 
 def dashboard(splitter_name: str, embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
-        st.info("No index found")
+        st.subheader("Involving model Keys")
+        st.code(
+            """
+export SERPAPI_API_KEY="e7945........."
+export OPENAI_API_KEY="sk-........."
+export GROQ_API_KEY="gsk_........."
+export ANTHROPIC_API_KEY="sk-ant-........."
+export LANGCHAIN_API_KEY="ls__........."
+export NVIDIA_API_KEY="nvapi-........."
+export HUGGING_FACE_TOKEN="hf_........."
+export COHERE_API_KEY="zFiHtBT........."
+export CO_API_KEY="zFiHtBT........."
+"""
+        )
+
         return
 
     index_fullpath_list = [

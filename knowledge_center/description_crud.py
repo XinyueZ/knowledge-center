@@ -102,6 +102,7 @@ def genenerate_and_load_description(
         if not has_index_description(conn, index_dir_name):
             embed = embeddings_selection[embeddings_name]
             saved_index = Chroma(
+                collection_name=index_dir_name,  # Notice to set collection_name, otherwise it will create a new db when other lib (ie. llama_index) created with another collection-name.
                 persist_directory=os.path.join(persist_directory, index_dir_name),
                 embedding_function=embed,
             )

@@ -35,6 +35,7 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
                 "RecursiveCharacterTextChunker",
                 "CharacterTextChunker",
                 "SentenceTransformersTokenTextChunker",
+                "SentenceWindowChunker",
             ],
             index=0,
             key="splitter_selector",

@@ -162,16 +162,22 @@ export CO_API_KEY="zFiHtBT........."
             st.subheader("")
             st.write(index_name)
             st.subheader("")
-            c1, c12, c2 = st.columns(3)
-            if c1.button("🚽", key=f"{index_name}_delete", help="Delete index"):
+
+            if st.button(
+                "🚽", key=f"{index_name}_delete", help="Delete index", type="primary"
+            ):
                 shutil.rmtree(os.path.join(DB_PATH, index_name))
                 del_description(index_name)
                 st.experimental_rerun()
-            c12.write("")
-            c2.button("✎", key=f"{index_name}_edit", help="Edit index", type="primary")
         with col2:
-            st.subheader("")
-            st.write(description)
+
+            st.text_area(
+                label="",
+                value=description,
+                placeholder="Description",
+                height=200,
+                key=f"{index_name}_description",
+            )
 
         with col3:
             st.subheader("")

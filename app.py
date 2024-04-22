@@ -7,11 +7,13 @@ from typing import List, Tuple
 import nest_asyncio
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from tqdm.asyncio import tqdm
 
 from knowledge_center.chunkers import (
     CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
-    CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
+    CHUNK_SIZE_MIN_VALUE, embeddings_lookup,
+    get_chunker_splitter_embedings_selection)
 from knowledge_center.description_crud import (connect_db, delete_description,
                                                genenerate_and_load_description,
                                                update_description_by_index)
@@ -191,7 +193,9 @@ export CO_API_KEY="zFiHtBT........."
                     update_query_llm=default_hyde_update_query_llm,
                     hypo_gen_llm=default_hyde_gen_llm,
                     synthesizer_llm=default_hyde_synthesizer_llm,
-                    embeddings=default_hyde_embeddings,
+                    embeddings=LangchainEmbedding(
+                        embeddings_lookup[embeddings_name]
+                    ),
                 )
                 res = hyde(
                     index_name=index_name,

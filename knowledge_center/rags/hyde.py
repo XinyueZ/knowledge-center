@@ -2,7 +2,6 @@ import os
 import sys
 from typing import Any, List, Tuple
 
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from llama_index.core import (PromptTemplate, QueryBundle, VectorStoreIndex,
                               get_response_synthesizer)
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -17,22 +16,20 @@ from llama_index.core.response_synthesizers.base import BaseSynthesizer
 from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import NodeWithScore
-
-from knowledge_center.completions.vanilla_query_engine import \
-    VanillaQueryEngine
-from knowledge_center.rags import (default_hyde_embeddings,
-                                   default_hyde_gen_llm,
-                                   default_hyde_synthesizer_llm,
-                                   default_hyde_update_query_llm)
-from knowledge_center.rags.base_rag import BaseRAG
-from knowledge_center.utils import lli_from_chroma_store, pretty_print
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.llms.langchain.base import LangChainLLM
 
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 )
-
+from knowledge_center.completions.vanilla_query_engine import \
+    VanillaQueryEngine
+from knowledge_center.models.embeddings import embeddings_lookup
+from knowledge_center.models.llms import llms_lookup
+from knowledge_center.rags.base_rag import BaseRAG
+from knowledge_center.utils import lli_from_chroma_store, pretty_print
 
 RERANK_TOP_K = 5
 
@@ -76,14 +73,10 @@ class HyDE(BaseRAG):
 
     def __init__(
         self,
-        update_query_llm: BaseLLM,
-        hypo_gen_llm: BaseLLM,
-        synthesizer_llm: BaseLLM,
+        llm: BaseLLM,
         embeddings: EmbedType,
     ) -> None:
-        self.update_query_llm = update_query_llm
-        self.hypo_gen_llm = hypo_gen_llm
-        self.synthesizer_llm = synthesizer_llm
+        self.llm = llm
         self.embeddings = embeddings
 
     def _create_base_retriever_and_query_engine(
@@ -97,20 +90,20 @@ class HyDE(BaseRAG):
         )
 
         retriever = vector_index.as_retriever()
-        query_engine = vector_index.as_query_engine(llm=self.update_query_llm)
+        query_engine = vector_index.as_query_engine(llm=self.llm)
         return retriever, query_engine
 
     def _create_hyde_query_engine(
         self,
         base_retriever: BaseRetriever,
     ) -> BaseQueryEngine:
-        hyde_retriever = _HyDERetriever(base_retriever, self.hypo_gen_llm)
+        hyde_retriever = _HyDERetriever(base_retriever, self.llm)
 
         rerank: BaseNodePostprocessor = SentenceTransformerRerank(
             top_n=RERANK_TOP_K, model="BAAI/bge-reranker-base"
         )
         response_synthesizer: BaseSynthesizer = get_response_synthesizer(
-            response_mode=ResponseMode.REFINE, llm=self.synthesizer_llm
+            response_mode=ResponseMode.REFINE, llm=self.llm
         )
 
         return RetrieverQueryEngine(
@@ -149,16 +142,14 @@ class HyDE(BaseRAG):
 
 def main():
     hyde = HyDE(
-        update_query_llm=default_hyde_update_query_llm,
-        hypo_gen_llm=default_hyde_gen_llm,
-        synthesizer_llm=default_hyde_synthesizer_llm,
-        embeddings=default_hyde_embeddings,
+        llm=LangChainLLM(llms_lookup["Groq/gemma-7b-it"]()),
+        embeddings=LangchainEmbedding(embeddings_lookup["NVIDIAEmbeddings"]()),
     )
 
     hyde_res = hyde(
         index_name="4th",
         persist_directory="./vector_db",
-        query="These documents outline a company's policies regarding employee conduct and information disclosure. Employees are instructed to direct media and shareholder requests for information to the Investor Relations Manager and to provide written acknowledgement of certain procedures. The company also intends to conduct fair investigations while preserving confidentiality.",
+        query="Outline of the document",
     )
 
     pretty_print("final res", str(hyde_res))

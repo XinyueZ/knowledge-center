@@ -8,20 +8,18 @@ import nest_asyncio
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.llms.langchain.base import LangChainLLM
 from tqdm.asyncio import tqdm
 
 from knowledge_center.chunkers import (
     CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
-    CHUNK_SIZE_MIN_VALUE, embeddings_lookup,
-    get_chunker_splitter_embedings_selection)
+    CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
 from knowledge_center.description_crud import (connect_db, delete_description,
                                                genenerate_and_load_description,
                                                update_description_by_index)
 from knowledge_center.file_loader import files_uploader
-from knowledge_center.rags import (default_hyde_embeddings,
-                                   default_hyde_gen_llm,
-                                   default_hyde_synthesizer_llm,
-                                   default_hyde_update_query_llm)
+from knowledge_center.models.embeddings import embeddings_lookup
+from knowledge_center.models.llms import llms_lookup
 from knowledge_center.rags.hyde import HyDE
 from knowledge_center.utils import pretty_print
 
@@ -188,14 +186,13 @@ export CO_API_KEY="zFiHtBT........."
             st.subheader("")
             st.write(description)
 
-            def apply_smart_update(index_name: str, description: str):
+            def apply_smart_update(
+                index_name: str, description: str, embeddings_name: str
+            ):
+                llm = llms_lookup["Groq/mixtral-8x7b-32768"]()
                 hyde = HyDE(
-                    update_query_llm=default_hyde_update_query_llm,
-                    hypo_gen_llm=default_hyde_gen_llm,
-                    synthesizer_llm=default_hyde_synthesizer_llm,
-                    embeddings=LangchainEmbedding(
-                        embeddings_lookup[embeddings_name]
-                    ),
+                    llm=LangChainLLM(llm),
+                    embeddings=LangchainEmbedding(embeddings_lookup[embeddings_name]()),
                 )
                 res = hyde(
                     index_name=index_name,
@@ -209,7 +206,7 @@ export CO_API_KEY="zFiHtBT........."
                 help="smart update",
                 key=f"{index_name}_smart_update",
                 on_click=apply_smart_update,
-                args=[index_name, description],
+                args=[index_name, description, embeddings_name],
             )
         with col3:
             st.subheader("")

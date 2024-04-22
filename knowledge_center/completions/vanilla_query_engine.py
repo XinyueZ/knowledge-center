@@ -12,14 +12,11 @@ sys.path.append(
     )
 )
 
-from knowledge_center.completions.base_completion import BaseCompletion
-from knowledge_center.utils import pretty_print
+from llama_index.llms.langchain.base import LangChainLLM
 
-default_vanilla_llm = Groq(
-    model="llama3-70b-8192",  # llama3-8b-8192
-    temperature=0,
-    timeout=60,
-)
+from knowledge_center.completions.base_completion import BaseCompletion
+from knowledge_center.models.llms import llms_lookup
+from knowledge_center.utils import pretty_print
 
 
 class VanillaQueryEngine(CustomQueryEngine, BaseCompletion):
@@ -35,7 +32,9 @@ class VanillaQueryEngine(CustomQueryEngine, BaseCompletion):
 
 
 def main():
-    vanilla_query_engine = VanillaQueryEngine(llm=default_vanilla_llm)
+    vanilla_query_engine = VanillaQueryEngine(
+        llm=LangChainLLM(llms_lookup["Groq/gemma-7b-it"]())
+    )
     query_res = vanilla_query_engine(query_str="What is the capital of France?")
     pretty_print("query_res", query_res)
 

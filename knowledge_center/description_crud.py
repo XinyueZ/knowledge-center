@@ -7,10 +7,10 @@ from langchain_chroma import Chroma
 from langchain_core.retrievers import BaseRetriever
 from tqdm.asyncio import tqdm
 
-from knowledge_center.chunkers import embeddings_lookup
-from knowledge_center.rags.vanilla_rag import VanillaRAG
-
-rag_selection = {"vanilla": VanillaRAG()}
+from knowledge_center.completions.vanilla_docs_query_chain import \
+    VanillaDocsQueryChain
+from knowledge_center.models.embeddings import embeddings_lookup
+from knowledge_center.models.llms import llms_lookup
 
 
 def connect_db() -> sqlite3.Connection:
@@ -110,15 +110,15 @@ async def _generate_description(
 ) -> Tuple[str, str, str, str, str]:
     index_dir_name = os.path.basename(index_fullpath)
     if not has_index_description(conn, index_dir_name):
-        embed = embeddings_lookup[embeddings_name]
+        embed = embeddings_lookup[embeddings_name]()
         saved_index = Chroma(
             collection_name=index_dir_name,
             persist_directory=os.path.join(persist_directory, index_dir_name),
             embedding_function=embed,
         )
         retriever: BaseRetriever = saved_index.as_retriever()
-        description = rag_selection["vanilla"](
-            prompt="Description of the documents",
+        chain = VanillaDocsQueryChain(llms_lookup["ChatCohere"]())
+        description = chain(
             preamble="You're an AI assistant to get the description of the documents briefly.",
             documents=retriever.invoke("Get the description of the documents"),
         )

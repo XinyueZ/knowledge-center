@@ -7,7 +7,7 @@ from langchain_chroma import Chroma
 from langchain_core.retrievers import BaseRetriever
 from tqdm.asyncio import tqdm
 
-from knowledge_center.chunkers import embeddings_selection
+from knowledge_center.chunkers import embeddings_lookup
 from knowledge_center.rags.vanilla_rag import VanillaRAG
 
 rag_selection = {"vanilla": VanillaRAG()}
@@ -84,6 +84,17 @@ def fetch_description_by_index(conn: sqlite3.Connection, index_name: str):
     return cursor.fetchone()
 
 
+def update_description_by_index(
+    conn: sqlite3.Connection, index_name: str, update_description: str
+):
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE descriptions SET description = ? WHERE index_name = ?",
+        (update_description, index_name),
+    )
+    conn.commit()
+
+
 def fetch_descriptions(conn: sqlite3.Connection):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM descriptions")
@@ -99,7 +110,7 @@ async def _generate_description(
 ) -> Tuple[str, str, str, str, str]:
     index_dir_name = os.path.basename(index_fullpath)
     if not has_index_description(conn, index_dir_name):
-        embed = embeddings_selection[embeddings_name]
+        embed = embeddings_lookup[embeddings_name]
         saved_index = Chroma(
             collection_name=index_dir_name,
             persist_directory=os.path.join(persist_directory, index_dir_name),
@@ -142,9 +153,3 @@ async def genenerate_and_load_description(
     all_descriptions = await tqdm.gather(*tasks)
     conn.close()
     return all_descriptions
-
-
-def del_description(index_name: str):
-    conn = connect_db()
-    delete_description(conn, index_name)
-    conn.close()

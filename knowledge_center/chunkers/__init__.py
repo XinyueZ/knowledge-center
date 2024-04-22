@@ -23,7 +23,7 @@ CHUNK_OVERLAP_DEFAULT = 0
 CHUNK_OVERLAP_MIN_VALUE = 0
 
 
-embeddings_selection: [str, Embeddings] = {
+embeddings_lookup: [str, Embeddings] = {
     "NVIDIAEmbeddings": NVIDIAEmbeddings(model="nvolveqa_40k"),
     "SentenceTransformerEmbeddings": SentenceTransformerEmbeddings(
         model_name="all-MiniLM-L6-v2"
@@ -41,7 +41,7 @@ def get_chunker_splitter_embedings_selection(
             lambda _=None: RecursiveCharacterTextChunker(
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
-                embeddings=embeddings_selection["NVIDIAEmbeddings"],
+                embeddings=embeddings_lookup["NVIDIAEmbeddings"],
             ),
             "RecursiveCharacterTextSplitter",
             "NVIDIAEmbeddings",
@@ -50,7 +50,7 @@ def get_chunker_splitter_embedings_selection(
             lambda _=None: CharacterTextChunker(
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
-                embeddings=embeddings_selection["NVIDIAEmbeddings"],
+                embeddings=embeddings_lookup["NVIDIAEmbeddings"],
             ),
             "CharacterTextSplitter",
             "NVIDIAEmbeddings",
@@ -58,14 +58,14 @@ def get_chunker_splitter_embedings_selection(
         "SentenceTransformersTokenTextChunker": (
             lambda _=None: SentenceTransformersTokenTextChunker(
                 chunk_overlap=chunk_overlap,
-                embeddings=embeddings_selection["SentenceTransformerEmbeddings"],
+                embeddings=embeddings_lookup["SentenceTransformerEmbeddings"],
             ),
             "SentenceTransformersTokenTextSplitter",
             "SentenceTransformerEmbeddings",
         ),
         "SentenceWindowChunker": (
             lambda _=None: SentenceWindowChunker(
-                embeddings=LangchainEmbedding(embeddings_selection["NVIDIAEmbeddings"]),
+                embeddings=LangchainEmbedding(embeddings_lookup["NVIDIAEmbeddings"]),
             ),
             "SentenceWindowNodeParser",
             "NVIDIAEmbeddings",

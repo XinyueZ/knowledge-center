@@ -10,13 +10,19 @@ sys.path.append(
     )
 )
 
+from typing import Any
+
+from knowledge_center.completions.base_completion import BaseCompletion
 from knowledge_center.rags.vanilla_rag import VanillaRAG
 from knowledge_center.utils import pretty_print
 
 
-class VanillaDocsQueryChain:
+class VanillaDocsQueryChain(BaseCompletion):
     def __init__(self):
         self.rag = VanillaRAG()
+
+    def __call__(self, *args: Any, **kwds: Any) -> str:
+        self.query(*args, **kwds)
 
     def __call__(self, documents: List[Document]) -> str:
         query = {
@@ -34,7 +40,7 @@ def main():
         Document("This is a document of Tom and Jerry"),
     ]
     query_chain = VanillaDocsQueryChain()
-    query_res = query_chain(docs)
+    query_res = query_chain(documents=docs)
 
     pretty_print("query_res", query_res)
 

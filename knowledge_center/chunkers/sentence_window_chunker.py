@@ -1,8 +1,6 @@
 import os
 from typing import Iterable, List, Union
 
-import chromadb
-from chromadb.api import ClientAPI
 from langchain_core.documents import Document as lc_Document
 from langchain_core.embeddings import Embeddings
 from llama_index.core import StorageContext, VectorStoreIndex
@@ -10,9 +8,9 @@ from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.schema import BaseNode
 from llama_index.core.schema import Document as lli_Document
 from llama_index.legacy.core.embeddings.base import BaseEmbedding
-from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from knowledge_center.chunkers.base_chunker import BaseChunker
+from knowledge_center.utils import lli_from_chroma_store
 
 WIN_SZ = 3
 
@@ -47,11 +45,7 @@ class SentenceWindowChunker(BaseChunker):
         index_name: str,
     ) -> None:
         chunks = self.create_chunks(documents)
-
-        path = os.path.join(persist_directory, index_name)
-        db: ClientAPI = chromadb.PersistentClient(path=path)
-        chroma_collection = db.get_or_create_collection(index_name)
-        vector_store = ChromaVectorStore(chroma_collection)
+        vector_store = lli_from_chroma_store(persist_directory, index_name)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
         VectorStoreIndex(

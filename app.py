@@ -12,9 +12,15 @@ from tqdm.asyncio import tqdm
 from knowledge_center.chunkers import (
     CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
     CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
-from knowledge_center.description_crud import (del_description,
-                                               genenerate_and_load_description)
+from knowledge_center.description_crud import (connect_db, delete_description,
+                                               genenerate_and_load_description,
+                                               update_description_by_index)
 from knowledge_center.file_loader import files_uploader
+from knowledge_center.rags import (default_hyde_embeddings,
+                                   default_hyde_gen_llm,
+                                   default_hyde_synthesizer_llm,
+                                   default_hyde_update_query_llm)
+from knowledge_center.rags.hyde import HyDE
 from knowledge_center.utils import pretty_print
 
 nest_asyncio.apply()
@@ -162,22 +168,45 @@ export CO_API_KEY="zFiHtBT........."
             st.write(index_name)
             st.subheader("")
 
-            if st.button(
-                "🚽", key=f"{index_name}_delete", help="Delete index", type="primary"
-            ):
+            def apply_delete(index_name: str):
                 shutil.rmtree(os.path.join(DB_PATH, index_name))
-                del_description(index_name)
-                st.experimental_rerun()
+                delete_description(connect_db(), index_name)
+
+            if st.button(
+                "🗑️",
+                key=f"{index_name}_delete",
+                help="Delete index",
+                type="primary",
+                on_click=apply_delete,
+                args=[index_name],
+            ):
+                st.rerun()
+
         with col2:
+            st.subheader("")
+            st.write(description)
 
-            st.text_area(
-                label="",
-                value=description,
-                placeholder="Description",
-                height=200,
-                key=f"{index_name}_description",
+            def apply_smart_update(index_name: str, description: str):
+                hyde = HyDE(
+                    update_query_llm=default_hyde_update_query_llm,
+                    hypo_gen_llm=default_hyde_gen_llm,
+                    synthesizer_llm=default_hyde_synthesizer_llm,
+                    embeddings=default_hyde_embeddings,
+                )
+                res = hyde(
+                    index_name=index_name,
+                    persist_directory="./vector_db",
+                    query=description,
+                )
+                update_description_by_index(connect_db(), index_name, str(res))
+
+            st.button(
+                "✨",
+                help="smart update",
+                key=f"{index_name}_smart_update",
+                on_click=apply_smart_update,
+                args=[index_name, description],
             )
-
         with col3:
             st.subheader("")
             st.write(splitter_name)

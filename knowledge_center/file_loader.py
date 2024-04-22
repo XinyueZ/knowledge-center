@@ -1,6 +1,8 @@
-from typing import List
-import streamlit as st
 import os
+from typing import List
+
+import streamlit as st
+
 from knowledge_center.utils import pretty_print
 
 
@@ -30,21 +32,7 @@ def files_uploader(prompt: str, storage_dir: str = "./tmp") -> List[str]:
                     uploaded_doc.flush()
                     uploaded_doc.close()
                 file_fullpath_list.append(temp_file_path)
-            all_same_files = (
-                all(
-                    [
-                        file_name == st.session_state["file_fullpath_list"][idx]
-                        for idx, file_name in enumerate(file_fullpath_list)
-                    ]
-                )
-                if st.session_state.get("file_fullpath_list")
-                else False
-            )
-            if all_same_files:
-                pretty_print("Same files uploaded")
-                return st.session_state["file_fullpath_list"]
 
-            pretty_print("New files uploaded")
             st.session_state["file_fullpath_list"] = file_fullpath_list
             return st.session_state["file_fullpath_list"]
         return None

@@ -27,7 +27,7 @@ class VanillaDocsQueryChain(BaseCompletion):
     def __call__(self, *args: Any, **kwds: Any) -> str:
         return self.query(*args, **kwds)
 
-    def query(self, documents: List[Document], preamble: str) -> str:
+    def query(self, documents: List[Document], preamble: str = None) -> str:
         query = {
             "documents": documents,
             "prompt": "Briefing the description of the documents as context.",

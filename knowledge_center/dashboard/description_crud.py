@@ -9,8 +9,8 @@ from tqdm.asyncio import tqdm
 
 from knowledge_center.completions.vanilla_docs_query_chain import \
     VanillaDocsQueryChain
+from knowledge_center.dashboard import get_rag_llm_fn
 from knowledge_center.models.embeddings import embeddings_lookup
-from knowledge_center.models.llms import llms_lookup
 
 
 def connect_db() -> sqlite3.Connection:
@@ -117,10 +117,10 @@ async def _generate_description(
             embedding_function=embed,
         )
         retriever: BaseRetriever = saved_index.as_retriever()
-        chain = VanillaDocsQueryChain(llms_lookup["ChatCohere"]())
+        chain = VanillaDocsQueryChain(get_rag_llm_fn()())
         description = chain(
-            preamble="You're an AI assistant to get the description of the documents briefly.",
-            documents=retriever.invoke("Get the description of the documents"),
+            #preamble="You're an AI assistant to get the description of the documents briefly.",
+            documents=retriever.invoke("Description of the documents"),
         )
         insert_description(
             conn,

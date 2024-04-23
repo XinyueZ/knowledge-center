@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import shutil
 from datetime import datetime
@@ -14,12 +15,13 @@ from tqdm.asyncio import tqdm
 from knowledge_center.chunkers import (
     CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
     CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
-from knowledge_center.description_crud import (connect_db, delete_description,
-                                               genenerate_and_load_description,
-                                               update_description_by_index)
+from knowledge_center.dashboard import get_smart_update_llm_fn
+from knowledge_center.dashboard.description_crud import (
+    connect_db, delete_description, genenerate_and_load_description,
+    update_description_by_index)
 from knowledge_center.file_loader import files_uploader
+from knowledge_center.models import USE_CLOUD_MODELS
 from knowledge_center.models.embeddings import embeddings_lookup
-from knowledge_center.models.llms import llms_lookup
 from knowledge_center.rags.hyde import HyDE
 from knowledge_center.utils import pretty_print
 
@@ -189,9 +191,8 @@ export CO_API_KEY="zFiHtBT........."
             def apply_smart_update(
                 index_name: str, description: str, embeddings_name: str
             ):
-                llm = llms_lookup["Groq/mixtral-8x7b-32768"]()
                 hyde = HyDE(
-                    llm=LangChainLLM(llm),
+                    llm=LangChainLLM(get_smart_update_llm_fn()()),
                     embeddings=LangchainEmbedding(embeddings_lookup[embeddings_name]()),
                 )
                 res = hyde(
@@ -224,9 +225,15 @@ export CO_API_KEY="zFiHtBT........."
         st.write("---")
 
 
+def ollama_option():
+    use_ollama = st.sidebar.checkbox("Use Ollama", value=USE_CLOUD_MODELS())
+    with open("ollama_option.json", "w") as f:
+        json.dump({"use_ollama": use_ollama}, f)
+
+
 async def main():
     st.sidebar.header("Knowledge Center")
-
+    ollama_option()
     file_fullpath_list = files_uploader("# Upload files")
     pretty_print("File fullpath list", file_fullpath_list)
 

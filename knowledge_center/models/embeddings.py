@@ -29,6 +29,9 @@ embeddings_lookup: Dict[str, Callable[[], Embeddings]] = (
     }
     if USE_CLOUD_MODELS()
     else {
+        "SentenceTransformerEmbeddings": lambda: SentenceTransformerEmbeddings(
+            model_name="all-MiniLM-L6-v2"
+        ),
         "Ollama/nomic-embed-text": lambda: OllamaEmbeddings(
             model="nomic-embed-text:latest"
         ),

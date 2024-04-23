@@ -86,5 +86,9 @@ llms_lookup: Dict[str, Callable[[], BaseLanguageModel]] = (
             model="mistral:latest",
             temperature=0,
         ),
+        "Ollama/mixtral": lambda: ChatOllama(
+            model="mixtral:latest",
+            temperature=0,
+        ),
     }
 )

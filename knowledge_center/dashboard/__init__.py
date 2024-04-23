@@ -14,5 +14,5 @@ def get_rag_llm_fn() -> Callable[[], BaseLanguageModel]:
 
 def get_smart_update_llm_fn() -> Callable[[], BaseLanguageModel]:
     return (
-        llms_lookup["Groq/mixtral-8x7b-32768"] if USE_CLOUD_MODELS() else llms_lookup["Ollama/mistral"]
+        llms_lookup["Groq/mixtral-8x7b-32768"] if USE_CLOUD_MODELS() else llms_lookup["Ollama/mixtral"]
     )

@@ -67,9 +67,7 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
         chunker = chunker_and_embedings_selection[chunker_selector][0]()
         splitter_name = chunker_and_embedings_selection[chunker_selector][1]
         embeddings_name = chunker_and_embedings_selection[chunker_selector][2]
-        index_name = st.text_input(
-            "Index name(required, Press Enter to Save)", placeholder="index name"
-        ).strip()
+        index_name = st.text_input("Index name", placeholder="index name").strip()
         if index_name is None or index_name == "":
             st.error("Please provide a name for the collection")
             return
@@ -77,22 +75,24 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
             if os.path.exists(DB_PATH) and index_name in os.listdir(DB_PATH):
                 st.error("Duplicate index name")
                 return
+            if st.button("Ingest", key="ingest_button"):
+                with st.spinner("Chunk and indexing..."):
+                    tasks = [
+                        PyPDFLoader(filepath).aload() for filepath in file_fullpath_list
+                    ]
+                    docs_list = await tqdm.gather(
+                        *tasks
+                    )  # list of documents of each file
+                    docs = [
+                        doc for docs in docs_list for doc in docs
+                    ]  # flatten the all documents
 
-            with st.spinner("Chunk and indexing..."):
-                tasks = [
-                    PyPDFLoader(filepath).aload() for filepath in file_fullpath_list
-                ]
-                docs_list = await tqdm.gather(*tasks)  # list of documents of each file
-                docs = [
-                    doc for docs in docs_list for doc in docs
-                ]  # flatten the all documents
-
-                chunker(
-                    documents=docs,
-                    persist_directory=DB_PATH,
-                    index_name=index_name,
-                )
-            st.success("Done!")
+                    chunker(
+                        documents=docs,
+                        persist_directory=DB_PATH,
+                        index_name=index_name,
+                    )
+                st.success("Done!")
     return splitter_name, embeddings_name
 
 
@@ -225,15 +225,8 @@ export CO_API_KEY="zFiHtBT........."
         st.write("---")
 
 
-def ollama_option():
-    use_ollama = st.sidebar.checkbox("Use Ollama", value=USE_CLOUD_MODELS())
-    with open("ollama_option.json", "w") as f:
-        json.dump({"use_ollama": use_ollama}, f)
-
-
 async def main():
     st.sidebar.header("Knowledge Center")
-    ollama_option()
     file_fullpath_list = files_uploader("# Upload files")
     pretty_print("File fullpath list", file_fullpath_list)
 

@@ -8,22 +8,25 @@ from typing import List, Tuple
 import nest_asyncio
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from llama_index.core import SimpleDirectoryReader
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from llama_index.llms.langchain.base import LangChainLLM
 from tqdm.asyncio import tqdm
 
-from knowledge_center.chunkers import (
-    CHUNK_OVERLAP_DEFAULT, CHUNK_OVERLAP_MIN_VALUE, CHUNK_SIZE_DEFAULT,
-    CHUNK_SIZE_MIN_VALUE, get_chunker_splitter_embedings_selection)
-from knowledge_center.dashboard import get_smart_update_llm_fn
+from knowledge_center.chunkers import get_chunker_splitter_embedings_selection
+from knowledge_center.dashboard import (get_put_readme_embed_llm_fn,
+                                        get_smart_update_llm_fn)
 from knowledge_center.dashboard.description_crud import (
-    connect_db, delete_description, genenerate_and_load_description,
-    update_description_by_index)
+    connect_db, delete_description, fetch_descriptions,
+    genenerate_and_load_description, update_description_by_index)
 from knowledge_center.file_loader import files_uploader
-from knowledge_center.models import USE_CLOUD_MODELS
-from knowledge_center.models.embeddings import embeddings_lookup
+from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.rags.hyde import HyDE
-from knowledge_center.utils import pretty_print
+from knowledge_center.rags.recursive_rag import RecursiveRAG
+from knowledge_center.utils import (CHUNK_OVERLAP_DEFAULT,
+                                    CHUNK_OVERLAP_MIN_VALUE,
+                                    CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
+                                    pretty_print)
 
 nest_asyncio.apply()
 
@@ -98,37 +101,21 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
 
 async def dashboard(splitter_name: str, embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
-        st.subheader("Involving model Keys")
-        st.code(
-            """
-export SERPAPI_API_KEY="e7945........."
-export OPENAI_API_KEY="sk-........."
-export GROQ_API_KEY="gsk_........."
-export ANTHROPIC_API_KEY="sk-ant-........."
-export LANGCHAIN_API_KEY="ls__........."
-export NVIDIA_API_KEY="nvapi-........."
-export HUGGING_FACE_TOKEN="hf_........."
-export COHERE_API_KEY="zFiHtBT........."
-export CO_API_KEY="zFiHtBT........."
-"""
-        )
-
         return
-
+    st.subheader("Dashboard")
     index_fullpath_list = [
         os.path.join(DB_PATH, index_dir_name)
         for index_dir_name in os.listdir(DB_PATH)
         if index_dir_name
     ]
 
-    description_list = await genenerate_and_load_description(
-        os.path.join(DB_PATH),
-        splitter_name,
-        embeddings_name,
-        index_fullpath_list,
-    )
-    pretty_print("Dashboard / Index fullpath list", index_fullpath_list)
-    pretty_print("Description list", description_list)
+    with st.spinner("..."):
+        description_list = await genenerate_and_load_description(
+            os.path.join(DB_PATH),
+            splitter_name,
+            embeddings_name,
+            index_fullpath_list,
+        )
 
     cols = [0.7, 3.0, 1.5, 1.5, 0.7]
     gap = "large"
@@ -193,7 +180,9 @@ export CO_API_KEY="zFiHtBT........."
             ):
                 hyde = HyDE(
                     llm=LangChainLLM(get_smart_update_llm_fn()()),
-                    embeddings=LangchainEmbedding(embeddings_lookup[embeddings_name]()),
+                    embeddings=LangchainEmbedding(
+                        embeddings_fn_lookup[embeddings_name]()
+                    ),
                 )
                 res = hyde(
                     index_name=index_name,
@@ -225,6 +214,24 @@ export CO_API_KEY="zFiHtBT........."
         st.write("---")
 
 
+async def put_readme():
+    embed_fn, llm_fn = get_put_readme_embed_llm_fn()
+    query_res = RecursiveRAG(
+        llm=LangChainLLM(llm_fn()),
+        embeddings=LangchainEmbedding(embed_fn()),
+        docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
+    ).query(
+        query="Briefing the introduction of the repository, also list the API needed (in bash export style)."
+    )
+    st.write_stream(query_res.response_gen)
+
+
+async def show_readme():
+    st.subheader("About me")
+    with st.spinner("## ..."):
+        await put_readme()
+
+
 async def main():
     st.sidebar.header("Knowledge Center")
     file_fullpath_list = files_uploader("# Upload files")
@@ -237,6 +244,7 @@ async def main():
         else:
             st.info("Please upload files")
     await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
+    await show_readme()
 
 
 if __name__ == "__main__":

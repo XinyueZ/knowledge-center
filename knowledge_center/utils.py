@@ -8,6 +8,15 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from rich.pretty import pprint
 
 VERBOSE = True
+SIM_TOP_K = 5
+RERANK_TOP_K = 5
+WIN_SZ = 3
+
+
+CHUNK_SIZE_DEFAULT = 1000
+CHUNK_SIZE_MIN_VALUE = 1000
+CHUNK_OVERLAP_DEFAULT = 0
+CHUNK_OVERLAP_MIN_VALUE = 0
 
 
 def pretty_print(title: str = "Untitled", content: Any = None):

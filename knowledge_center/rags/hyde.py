@@ -26,8 +26,8 @@ sys.path.append(
 )
 from knowledge_center.completions.vanilla_query_engine import \
     VanillaQueryEngine
-from knowledge_center.models.embeddings import embeddings_lookup
-from knowledge_center.models.llms import llms_lookup
+from knowledge_center.models.embeddings import embeddings_fn_lookup
+from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.base_rag import BaseRAG
 from knowledge_center.utils import lli_from_chroma_store, pretty_print
 
@@ -142,8 +142,8 @@ class HyDE(BaseRAG):
 
 def main():
     hyde = HyDE(
-        llm=LangChainLLM(llms_lookup["Groq/gemma-7b-it"]()),
-        embeddings=LangchainEmbedding(embeddings_lookup["NVIDIAEmbeddings"]()),
+        llm=LangChainLLM(llms_fn_lookup["Groq/gemma-7b-it"]()),
+        embeddings=LangchainEmbedding(embeddings_fn_lookup["NVIDIAEmbeddings"]()),
     )
 
     hyde_res = hyde(

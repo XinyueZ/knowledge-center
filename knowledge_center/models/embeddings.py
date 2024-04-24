@@ -10,7 +10,7 @@ from langchain_openai import OpenAIEmbeddings
 
 from knowledge_center.models import USE_CLOUD_MODELS
 
-embeddings_lookup: Dict[str, Callable[[], Embeddings]] = (
+embeddings_fn_lookup: Dict[str, Callable[[], Embeddings]] = (
     {
         "NVIDIAEmbeddings": lambda: NVIDIAEmbeddings(model="nvolveqa_40k"),
         "CohereEmbeddings": lambda: CohereEmbeddings(model="embed-english-light-v3.0"),

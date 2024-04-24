@@ -1,7 +1,9 @@
 Awsome Ingestion
 =====
 
-In this repository, we demonstrate how to ingest data from various sources into Chroma vector storage. We combine different approaches using the Llama-Index and LangChain. The focus is not on determining the superiority of algorithms or libraries; rather, it serves as a demonstration of data ingestion into Chroma. Additionally, there are RAG classes to generate descriptions for different indices.
+# Introduction
+
+The purpose of this repository is that we demonstrate how to ingest data from various sources into Chroma vector storage. We combine different approaches using the Llama-Index and LangChain. The focus is not on determining the superiority of algorithms or libraries; rather, it serves as a demonstration of data ingestion into Chroma. Additionally, there are RAG classes to generate descriptions for different indices.
 
 # References
 

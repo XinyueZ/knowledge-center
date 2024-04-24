@@ -10,7 +10,7 @@ from tqdm.asyncio import tqdm
 from knowledge_center.completions.vanilla_docs_query_chain import \
     VanillaDocsQueryChain
 from knowledge_center.dashboard import get_rag_llm_fn
-from knowledge_center.models.embeddings import embeddings_lookup
+from knowledge_center.models.embeddings import embeddings_fn_lookup
 
 
 def connect_db() -> sqlite3.Connection:
@@ -110,7 +110,7 @@ async def _generate_description(
 ) -> Tuple[str, str, str, str, str]:
     index_dir_name = os.path.basename(index_fullpath)
     if not has_index_description(conn, index_dir_name):
-        embed = embeddings_lookup[embeddings_name]()
+        embed = embeddings_fn_lookup[embeddings_name]()
         saved_index = Chroma(
             collection_name=index_dir_name,
             persist_directory=os.path.join(persist_directory, index_dir_name),

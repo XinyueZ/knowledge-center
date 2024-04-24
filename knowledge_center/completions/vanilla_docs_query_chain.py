@@ -15,7 +15,7 @@ from typing import Any
 from langchain_core.language_models.base import BaseLanguageModel
 
 from knowledge_center.completions.base_completion import BaseCompletion
-from knowledge_center.models.llms import llms_lookup
+from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.vanilla_rag import VanillaRAG
 from knowledge_center.utils import pretty_print
 
@@ -42,7 +42,7 @@ def main():
         Document("This is another document of Jerry"),
         Document("This is a document of Tom and Jerry"),
     ]
-    query_chain = VanillaDocsQueryChain(llm=llms_lookup["ChatCohere"]())
+    query_chain = VanillaDocsQueryChain(llm=llms_fn_lookup["ChatCohere"]())
     query_res = query_chain(
         documents=docs,
         preamble="You're an AI assistant to get the description of the documents briefly.",

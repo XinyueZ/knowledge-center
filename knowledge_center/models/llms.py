@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 
 from knowledge_center.models import USE_CLOUD_MODELS
 
-llms_lookup: Dict[str, Callable[[], BaseLanguageModel]] = (
+llms_fn_lookup: Dict[str, Callable[[], BaseLanguageModel]] = (
     {
         "ChatCohere": lambda: ChatCohere(
             model="command-r-plus",

@@ -12,12 +12,7 @@ from knowledge_center.chunkers.sentence_transformers_token_text_chunker import \
 from knowledge_center.chunkers.sentence_window_chunker import \
     SentenceWindowChunker
 from knowledge_center.models import USE_CLOUD_MODELS
-from knowledge_center.models.embeddings import embeddings_lookup
-
-CHUNK_SIZE_DEFAULT = 1000
-CHUNK_SIZE_MIN_VALUE = 1000
-CHUNK_OVERLAP_DEFAULT = 0
-CHUNK_OVERLAP_MIN_VALUE = 0
+from knowledge_center.models.embeddings import embeddings_fn_lookup
 
 
 def get_chunker_splitter_embedings_selection(
@@ -31,7 +26,7 @@ def get_chunker_splitter_embedings_selection(
                 lambda _=None: RecursiveCharacterTextChunker(
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    embeddings=embeddings_lookup["NVIDIAEmbeddings"](),
+                    embeddings=embeddings_fn_lookup["NVIDIAEmbeddings"](),
                 ),
                 "RecursiveCharacterTextSplitter",
                 "NVIDIAEmbeddings",
@@ -40,7 +35,7 @@ def get_chunker_splitter_embedings_selection(
                 lambda _=None: CharacterTextChunker(
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    embeddings=embeddings_lookup["NVIDIAEmbeddings"](),
+                    embeddings=embeddings_fn_lookup["NVIDIAEmbeddings"](),
                 ),
                 "CharacterTextSplitter",
                 "NVIDIAEmbeddings",
@@ -48,7 +43,7 @@ def get_chunker_splitter_embedings_selection(
             "SentenceWindowChunker": (
                 lambda _=None: SentenceWindowChunker(
                     embeddings=LangchainEmbedding(
-                        embeddings_lookup["NVIDIAEmbeddings"]()
+                        embeddings_fn_lookup["NVIDIAEmbeddings"]()
                     ),
                 ),
                 "SentenceWindowNodeParser",
@@ -61,7 +56,7 @@ def get_chunker_splitter_embedings_selection(
                 lambda _=None: RecursiveCharacterTextChunker(
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    embeddings=embeddings_lookup["Ollama/nomic-embed-text"](),
+                    embeddings=embeddings_fn_lookup["Ollama/nomic-embed-text"](),
                 ),
                 "RecursiveCharacterTextSplitter",
                 "Ollama/nomic-embed-text",
@@ -70,7 +65,7 @@ def get_chunker_splitter_embedings_selection(
                 lambda _=None: CharacterTextChunker(
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    embeddings=embeddings_lookup["Ollama/nomic-embed-text"](),
+                    embeddings=embeddings_fn_lookup["Ollama/nomic-embed-text"](),
                 ),
                 "CharacterTextSplitter",
                 "Ollama/nomic-embed-text",
@@ -78,7 +73,7 @@ def get_chunker_splitter_embedings_selection(
             "SentenceWindowChunker": (
                 lambda _=None: SentenceWindowChunker(
                     embeddings=LangchainEmbedding(
-                        embeddings_lookup["Ollama/nomic-embed-text"]()
+                        embeddings_fn_lookup["Ollama/nomic-embed-text"]()
                     ),
                 ),
                 "SentenceWindowNodeParser",
@@ -90,7 +85,7 @@ def get_chunker_splitter_embedings_selection(
     chunker_splitter_embedings_selection["SentenceTransformersTokenTextChunker"] = (
         lambda _=None: SentenceTransformersTokenTextChunker(
             chunk_overlap=chunk_overlap,
-            embeddings=embeddings_lookup["SentenceTransformerEmbeddings"](),
+            embeddings=embeddings_fn_lookup["SentenceTransformerEmbeddings"](),
         ),
         "SentenceTransformersTokenTextSplitter",
         "SentenceTransformerEmbeddings",

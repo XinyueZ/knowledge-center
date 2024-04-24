@@ -214,7 +214,7 @@ async def dashboard(splitter_name: str, embeddings_name: str):
         st.write("---")
 
 
-async def put_readme():
+def put_readme():
     embed_fn, llm_fn = get_put_readme_embed_llm_fn()
     query_res = RecursiveRAG(
         llm=LangChainLLM(llm_fn()),
@@ -229,7 +229,7 @@ async def put_readme():
 async def show_readme():
     st.subheader("About me")
     with st.spinner("## ..."):
-        await put_readme()
+        put_readme()
 
 
 async def main():

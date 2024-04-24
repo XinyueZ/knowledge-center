@@ -29,7 +29,11 @@ pip install -r requirements.txt
 
 # References
 
-#### Hypothetical Document Embeddings(HyDE)  [paper](https://arxiv.org/pdf/2212.10496.pdf), [read](https://teetracker.medium.com/rag-with-hypothetical-document-embeddings-hyde-0edeca23f891) [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/hyde.py)
+##### [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf) (Hypothetical Document Embeddings(HyDE))
+- [My comments](https://teetracker.medium.com/rag-with-hypothetical-document-embeddings-hyde-0edeca23f891)
+- [unofficial code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/hyde.py)
+
+##### [Advanced Retrieval-Augmented Generation: From Theory to LlamaIndex Implementation](https://towardsdatascience.com/advanced-retrieval-augmented-generation-from-theory-to-llamaindex-implementation-4de1464a9930)
 
 # Key exports for LLMs and Embeddings
 

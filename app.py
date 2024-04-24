@@ -102,7 +102,6 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
 async def dashboard(splitter_name: str, embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
         return
-    st.subheader("Dashboard")
     index_fullpath_list = [
         os.path.join(DB_PATH, index_dir_name)
         for index_dir_name in os.listdir(DB_PATH)
@@ -245,8 +244,12 @@ async def main():
             splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
-    await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
-    await show_readme()
+    tab_dashboard, tab_chat = st.tabs(["Dashboard", "Chat"])
+    with tab_dashboard:
+        await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
+        await show_readme()
+    with tab_chat:
+        st.write("Chat")
 
 
 if __name__ == "__main__":

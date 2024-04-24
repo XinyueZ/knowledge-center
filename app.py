@@ -221,7 +221,9 @@ def put_readme():
         embeddings=LangchainEmbedding(embed_fn()),
         docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
     ).query(
-        query="Briefing the introduction of the repository, also list the API needed (in bash export style)."
+        query="""Briefly introduce the repository, give use sections:
+1. list the required APIs in Bash Export Code Style.
+2. specify the setup requirements, pip and conda."""
     )
     st.write_stream(query_res.response_gen)
 

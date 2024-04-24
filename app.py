@@ -17,8 +17,8 @@ from knowledge_center.chunkers import get_chunker_splitter_embedings_selection
 from knowledge_center.dashboard import (get_put_readme_embed_llm_fn,
                                         get_smart_update_llm_fn)
 from knowledge_center.dashboard.description_crud import (
-    connect_db, delete_description, fetch_descriptions,
-    genenerate_and_load_description, update_description_by_index)
+    connect_db, delete_description, genenerate_and_load_description,
+    update_description_by_index)
 from knowledge_center.file_loader import files_uploader
 from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.rags.hyde import HyDE

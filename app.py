@@ -213,21 +213,20 @@ async def dashboard(splitter_name: str, embeddings_name: str):
         st.write("---")
 
 
-def put_readme():
-    embed_fn, llm_fn = get_put_readme_embed_llm_fn()
-    query_res = RecursiveRAG(
-        llm=LangChainLLM(llm_fn()),
-        embeddings=LangchainEmbedding(embed_fn()),
-        docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
-    ).query(
-        query="""Briefly introduce the repository, give use sections:
+async def show_readme():
+    def put_readme():
+        embed_fn, llm_fn = get_put_readme_embed_llm_fn()
+        query_res = RecursiveRAG(
+            llm=LangChainLLM(llm_fn()),
+            embeddings=LangchainEmbedding(embed_fn()),
+            docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
+        ).query(
+            query="""Briefly introduce the repository, give use sections:
 1. list the required APIs in Bash Export Code Style.
 2. specify the setup requirements, pip and conda."""
-    )
-    st.write_stream(query_res.response_gen)
+        )
+        st.write_stream(query_res.response_gen)
 
-
-async def show_readme():
     st.subheader("About me")
     with st.spinner("## ..."):
         put_readme()

@@ -27,13 +27,23 @@ conda activate machinelearning
 pip install -r requirements.txt
 ```
 
+### Run
+
+```bash
+streamlit run app.py --server.port 8011 --server.enableCORS false
+```
+
 # References
 
 ##### [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf) (Hypothetical Document Embeddings(HyDE))
 - [My comments](https://teetracker.medium.com/rag-with-hypothetical-document-embeddings-hyde-0edeca23f891)
-- [unofficial code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/hyde.py)
-
+- [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/hyde.py)
 ##### [Advanced Retrieval-Augmented Generation: From Theory to LlamaIndex Implementation](https://towardsdatascience.com/advanced-retrieval-augmented-generation-from-theory-to-llamaindex-implementation-4de1464a9930)
+- [code](https://github.com/XinyueZ/knowledge-center/blob/705bf55a6a31f54fce65fb1ef82fdd1fd8991764/knowledge_center/rags/recursive_rag.py)
+##### [Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity](https://arxiv.org/abs/2403.14403)
+
+- [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/chat_rag.py)
+- [standalone code](https://github.com/XinyueZ/chat-your-doc/blob/master/advanced/llamaindex_adaptive_rag.py)
 
 # Key exports for LLMs and Embeddings
 

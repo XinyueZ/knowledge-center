@@ -13,6 +13,7 @@ from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from llama_index.llms.langchain.base import LangChainLLM
 from tqdm.asyncio import tqdm
 
+from knowledge_center.chat import get_chat_llm_fn
 from knowledge_center.chunkers import get_chunker_splitter_embedings_selection
 from knowledge_center.dashboard import (get_put_readme_embed_llm_fn,
                                         get_smart_update_llm_fn)
@@ -21,7 +22,6 @@ from knowledge_center.dashboard.description_crud import (
     update_description_by_index)
 from knowledge_center.file_loader import files_uploader
 from knowledge_center.models.embeddings import embeddings_fn_lookup
-from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.chat_rag import ChatRAG
 from knowledge_center.rags.hyde import HyDE
 from knowledge_center.rags.recursive_rag import RecursiveRAG
@@ -240,10 +240,10 @@ Also list other stuffs, dependencies, 3rd parties supports mentioned in the cont
 
 
 async def chat_ui():
-    st.sidebar.header("Chat for knowledge")
+    st.header("Chat for knowledge")
     st.session_state["bot"] = (
         ChatRAG(
-            llm=LangChainLLM(llms_fn_lookup["Ollama/command-r"]()),
+            llm=LangChainLLM(get_chat_llm_fn()),
             verbose=True,
             persist_directory="./vector_db",  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
         )

@@ -64,7 +64,7 @@ class ChatRAG(BaseRAG):
     ) -> None:
         if not os.path.exists(persist_directory):
             pretty_print("Notice", f"Persist directory {persist_directory} not found.")
-            return
+            raise FileNotFoundError(f"Persist directory {persist_directory} not found.")
         self.streaming = streaming
         index_name_list = [
             name

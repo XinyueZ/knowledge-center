@@ -62,6 +62,9 @@ class ChatRAG(BaseRAG):
         streaming: bool = False,
         verbose=VERBOSE,
     ) -> None:
+        if not os.path.exists(persist_directory):
+            pretty_print("Notice", f"Persist directory {persist_directory} not found.")
+            return
         self.streaming = streaming
         index_name_list = [
             name
@@ -114,10 +117,7 @@ class ChatRAG(BaseRAG):
                 metadata=ToolMetadata(
                     name=index_name,
                     description="""Useful for queries (not questions) on the content that covers the following dedicated topic:
----Topic:---
 {topic}.
----Notice:---
-The topic comes from the documents that have been igested in the index in the vector database.
 """.format(
                         topic=description
                     ),
@@ -158,10 +158,7 @@ don't use the information outside those contexts, just say "I don't know." The t
                 metadata=ToolMetadata(
                     name=index_name,
                     description="""Useful for queries (questions) on the content that covers the following dedicated topic:
----Topic:---
 {topic}.
----Notice:---
-The topic comes from the documents that have been igested in the index in the vector database.
 """.format(
                         topic=description
                     ),
@@ -208,10 +205,10 @@ don't use the information outside those contexts, just say "I don't know." The t
                 prompt_template_str="Select only the content that is most relevant to the query.",
             ),
             query_engine_tools=query_engine_tools
-            + [mix_query_tool]
-            + question_engine_tools
             + [mix_questions_tool]
-            + fallback_tools,
+            + fallback_tools
+            + [mix_query_tool]
+            + question_engine_tools,
             summarizer=TreeSummarize(
                 streaming=streaming,
                 use_async=True,

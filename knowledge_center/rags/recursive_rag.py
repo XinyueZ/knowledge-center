@@ -3,8 +3,10 @@ import os
 import sys
 from math import e
 from typing import Any, Sequence
+
+from llama_index.core import (SimpleDirectoryReader, VectorStoreIndex,
+                              get_response_synthesizer)
 from llama_index.core.base.response.schema import RESPONSE_TYPE
-from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import SentenceWindowNodeParser
 from llama_index.core.postprocessor.metadata_replacement import \
@@ -15,7 +17,7 @@ from llama_index.core.schema import Document
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from llama_index.legacy.postprocessor import SentenceTransformerRerank
 from llama_index.llms.langchain.base import LangChainLLM
-from llama_index.core import get_response_synthesizer
+
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,8 +29,7 @@ from llama_index.core.embeddings.utils import EmbedType
 from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.base_rag import BaseRAG
-from knowledge_center.utils import (RERANK_TOP_K, SIM_TOP_K, VERBOSE, WIN_SZ,
-                                    pretty_print)
+from knowledge_center.utils import RERANK_TOP_K, SIM_TOP_K, VERBOSE, WIN_SZ
 
 
 class RecursiveRAG(BaseRAG):
@@ -86,7 +87,9 @@ async def main():
     docs = SimpleDirectoryReader(input_files=["README.md"]).load_data()
     rag = RecursiveRAG(
         llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
-        embeddings=LangchainEmbedding(embeddings_fn_lookup["Ollama/nomic-embed-text"]()),
+        embeddings=LangchainEmbedding(
+            embeddings_fn_lookup["Ollama/nomic-embed-text"]()
+        ),
         docs=docs,
     )
     query_res = await rag.aquery(

@@ -90,5 +90,9 @@ llms_fn_lookup: Dict[str, Callable[[], BaseLanguageModel]] = (
             model="mixtral:latest",
             temperature=0,
         ),
+        "Ollama/phi3": lambda: ChatOllama(
+            model="phi3:latest",
+            temperature=0,
+        ),
     }
 )

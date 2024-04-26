@@ -22,6 +22,7 @@ CHUNK_OVERLAP_MIN_VALUE = 0
 def pretty_print(title: str = "Untitled", content: Any = None):
     if not VERBOSE:
         return
+    print()
     print(f"-- {title} --")
     pprint(content)
 

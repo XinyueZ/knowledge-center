@@ -57,6 +57,34 @@ You must install Ollama to active the local models.
 - Check the [ollama_option.json](https://github.com/XinyueZ/knowledge-center/blob/main/ollama_option.json) file to turn on the local models.
 - Check [llms.py](https://github.com/XinyueZ/knowledge-center/blob/705bf55a6a31f54fce65fb1ef82fdd1fd8991764/knowledge_center/models/llms.py) to find the local models.
 
+# Model list
+
+## Embeddings
+
+Check file  [embeddings.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/models/embeddings.py) to find the embeddings models.
+
+## LLMs
+
+
+Check file  [llms.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/models/llms.py) to find the LLMs models.
+
+# Model config
+
+Different feature can use different models and we differentiate them in different parts.
+
+## For ingestion (chunking)
+
+Check file  [__init__.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/__init__.py)
+
+## For chat
+
+Check file  [__init__.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chat/__init__.py)
+
+## For Dashboard
+
+Check file  [__init__.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/dashboard/__init__.py), description generation, smart update of description etc.
+
+
 # Key exports for LLMs and Embeddings
 
 ```python

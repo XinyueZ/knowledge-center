@@ -42,6 +42,7 @@ class RecursiveRAG(BaseRAG):
         embeddings: EmbedType,
         docs: Sequence[Document],
         streaming=True,
+        verbose=VERBOSE,
     ) -> None:
         postproc = MetadataReplacementPostProcessor(target_metadata_key="window")
         node_parser = SentenceWindowNodeParser.from_defaults(
@@ -60,7 +61,7 @@ class RecursiveRAG(BaseRAG):
                     show_progress=True,
                 ).as_retriever(similarity_top_k=SIM_TOP_K)
             },
-            verbose=VERBOSE,
+            verbose=verbose,
         )
         rerank = SentenceTransformerRerank(
             top_n=RERANK_TOP_K, model="BAAI/bge-reranker-base"
@@ -70,7 +71,7 @@ class RecursiveRAG(BaseRAG):
             response_synthesizer=synth,
             llm=llm,
             node_postprocessors=[postproc, rerank],
-            verbose=VERBOSE,
+            verbose=verbose,
         )
 
     async def aquery(self, query: str) -> RESPONSE_TYPE:

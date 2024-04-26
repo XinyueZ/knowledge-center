@@ -8,12 +8,13 @@ The purpose of this repository is that we demonstrate how to ingest data from va
 # Powered By
 
 - 🦜️🔗 LangChain
-- 🦙 LlamaIndex 
-- <img src="https://user-images.githubusercontent.com/7164864/217935870-c0bc60a3-6fc0-4047-b011-7b4c59488c91.png" alt="Streamlit logo"  width="25"    style="margin-top:50px"></img> Streamlit
-- <img src="https://user-images.githubusercontent.com/891664/227103090-6624bf7d-9524-4e05-9d2c-c28d5d451481.png" alt="Chroma logo"  width="25%"    style="margin-top:50px"></img>
+- 🦙 LlamaIndex
+- <img src="https://user-images.githubusercontent.com/7164864/217935870-c0bc60a3-6fc0-4047-b011-7b4c59488c91.png" alt="Streamlit logo"  width="25"></img> Streamlit
+- <img src="https://user-images.githubusercontent.com/891664/227103090-6624bf7d-9524-4e05-9d2c-c28d5d451481.png" alt="Chroma logo"  width="25%"></img>
+- <img alt="ollama"  src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7" width="5%" height="5%"> Ollama
 
 # Setup
- 
+
 ### Conda
 
 ```bash
@@ -36,14 +37,25 @@ streamlit run app.py --server.port 8011 --server.enableCORS false
 # References
 
 ##### [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf) (Hypothetical Document Embeddings(HyDE))
+
 - [My comments](https://teetracker.medium.com/rag-with-hypothetical-document-embeddings-hyde-0edeca23f891)
 - [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/hyde.py)
+
 ##### [Advanced Retrieval-Augmented Generation: From Theory to LlamaIndex Implementation](https://towardsdatascience.com/advanced-retrieval-augmented-generation-from-theory-to-llamaindex-implementation-4de1464a9930)
+
 - [code](https://github.com/XinyueZ/knowledge-center/blob/705bf55a6a31f54fce65fb1ef82fdd1fd8991764/knowledge_center/rags/recursive_rag.py)
+
 ##### [Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity](https://arxiv.org/abs/2403.14403)
 
 - [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/chat_rag.py)
 - [standalone code](https://github.com/XinyueZ/chat-your-doc/blob/master/advanced/llamaindex_adaptive_rag.py)
+
+# Ollama setup
+
+You must install Ollama to active the local models.
+
+- Check the [ollama_option.json](https://github.com/XinyueZ/knowledge-center/blob/main/ollama_option.json) file to turn on the local models.
+- Check [llms.py](https://github.com/XinyueZ/knowledge-center/blob/705bf55a6a31f54fce65fb1ef82fdd1fd8991764/knowledge_center/models/llms.py) to find the local models.
 
 # Key exports for LLMs and Embeddings
 
@@ -58,5 +70,3 @@ export HUGGING_FACE_TOKEN="hf_........."
 export COHERE_API_KEY="zFiHtBT........."
 export CO_API_KEY="zFiHtBT........."
 ```
-
-

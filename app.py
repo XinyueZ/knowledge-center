@@ -21,6 +21,8 @@ from knowledge_center.dashboard.description_crud import (
     update_description_by_index)
 from knowledge_center.file_loader import files_uploader
 from knowledge_center.models.embeddings import embeddings_fn_lookup
+from knowledge_center.models.llms import llms_fn_lookup
+from knowledge_center.rags.chat_rag import ChatRAG
 from knowledge_center.rags.hyde import HyDE
 from knowledge_center.rags.recursive_rag import RecursiveRAG
 from knowledge_center.utils import (CHUNK_OVERLAP_DEFAULT,
@@ -101,6 +103,7 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
 
 async def dashboard(splitter_name: str, embeddings_name: str):
     if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
+        st.info("No index found")
         return
     index_fullpath_list = [
         os.path.join(DB_PATH, index_dir_name)
@@ -217,19 +220,51 @@ async def show_readme():
     def put_readme():
         embed_fn, llm_fn = get_put_readme_embed_llm_fn()
         query_res = RecursiveRAG(
+            verbose=False,
             llm=LangChainLLM(llm_fn()),
             embeddings=LangchainEmbedding(embed_fn()),
             docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
         ).query(
             query="""Briefly introduce the repository, give use sections:
-1. list the required APIs in Bash Export Code Style.
-2. specify the setup requirements, pip and conda."""
+1. list the required APIs, libraries in Bash Export Code Style.
+2. specify the setup requirements, pip and conda.
+3. approach to run
+
+Also list other stuffs, dependencies, 3rd parties supports mentioned in the content that you find important."""
         )
         st.write_stream(query_res.response_gen)
 
     st.subheader("About me")
     with st.spinner("## ..."):
         put_readme()
+
+
+async def chat_ui():
+    st.sidebar.header("Chat for knowledge")
+    st.session_state["bot"] = (
+        ChatRAG(
+            llm=LangChainLLM(llms_fn_lookup["Ollama/command-r"]()),
+            verbose=True,
+            persist_directory="./vector_db",  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
+        )
+        if "bot" not in st.session_state
+        else st.session_state["bot"]
+    )
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    if prompt := st.chat_input("What is up?"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                res = st.session_state["bot"](prompt)
+            response = st.write_stream(res.response_gen)
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 async def main():
@@ -243,12 +278,13 @@ async def main():
             splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
-    tab_dashboard, tab_chat = st.tabs(["Dashboard", "Chat"])
+    tab_about, tab_dashboard, tab_chat = st.tabs(["About", "Dashboard", "Chat"])
+    with tab_about:
+        await show_readme()
     with tab_dashboard:
         await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
-        await show_readme()
     with tab_chat:
-        st.write("Chat")
+        await chat_ui()
 
 
 if __name__ == "__main__":

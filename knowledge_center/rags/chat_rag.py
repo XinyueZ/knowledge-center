@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any, List, Union
+from typing import Any, Dict, List, Sequence, Union
 
 from llama_index.core import (SimpleDirectoryReader, VectorStoreIndex,
                               get_response_synthesizer)
@@ -58,7 +58,6 @@ class ChatRAG(BaseRAG):
     def __init__(
         self,
         llm: BaseLLM,
-        embeddings: EmbedType,
         persist_directory: str,
         streaming: bool = False,
         verbose=VERBOSE,
@@ -69,11 +68,15 @@ class ChatRAG(BaseRAG):
             for name in os.listdir(persist_directory)
             if os.path.isdir(os.path.join(persist_directory, name))
         ]
+        data = fetch_descriptions(conn=connect_db())
+        descriptions = list(map(lambda x: x[1], data))
+        embeddings_names = list(map(lambda x: x[3], data))
         index_list: List[VectorStoreIndex] = [
             VectorStoreIndex.from_vector_store(
-                lli_from_chroma_store(persist_directory, index_name), embeddings
+                lli_from_chroma_store(persist_directory, index_name),
+                LangchainEmbedding(embeddings_fn_lookup[embeds]()),
             )
-            for index_name in index_name_list
+            for index_name, embeds in zip(index_name_list, embeddings_names)
         ]
         descriptions = list(map(lambda x: x[1], fetch_descriptions(conn=connect_db())))
 
@@ -200,7 +203,10 @@ don't use the information outside those contexts, just say "I don't know." The t
 
         ###### Bind all together ######
         self.engine = RouterQueryEngine(
-            selector=LLMSingleSelector.from_defaults(llm=llm),
+            selector=LLMSingleSelector.from_defaults(
+                llm=llm,
+                prompt_template_str="Select only the content that is most relevant to the query.",
+            ),
             query_engine_tools=query_engine_tools
             + [mix_query_tool]
             + question_engine_tools
@@ -235,9 +241,6 @@ don't use the information outside those contexts, just say "I don't know." The t
 def main():
     chat_rag = ChatRAG(
         llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
-        embeddings=LangchainEmbedding(
-            embeddings_fn_lookup["Ollama/nomic-embed-text"]()
-        ),
         persist_directory="./vector_db",
         verbose=True,
     )

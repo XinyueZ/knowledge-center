@@ -263,7 +263,7 @@ async def chat_ui():
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 res = st.session_state["bot"](prompt)
-            response = st.write_stream(res.response_gen)
+            response = st.write(str(res.response))
         st.session_state.messages.append({"role": "assistant", "content": response})
 
 

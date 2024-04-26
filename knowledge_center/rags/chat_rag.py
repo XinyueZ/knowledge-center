@@ -53,7 +53,7 @@ from knowledge_center.utils import (N_MULTI_STEPS, RERANK_TOP_K, SIM_TOP_K,
 
 class ChatRAG(BaseRAG):
     engine: Union[BaseQueryEngine | BaseChatEngine]
-    stream: bool
+    streaming: bool
 
     def __init__(
         self,
@@ -62,7 +62,7 @@ class ChatRAG(BaseRAG):
         streaming: bool = False,
         verbose=VERBOSE,
     ) -> None:
-        self.stream = streaming
+        self.streaming = streaming
         index_name_list = [
             name
             for name in os.listdir(persist_directory)
@@ -214,15 +214,9 @@ don't use the information outside those contexts, just say "I don't know." The t
             + fallback_tools,
             summarizer=TreeSummarize(
                 streaming=streaming,
-                use_async=False,
+                use_async=True,
                 verbose=verbose,
             ),
-            verbose=verbose,
-        )
-        self.engine = CondenseQuestionChatEngine.from_defaults(
-            query_engine=self.engine,
-            llm=llm,
-            streaming=streaming,
             verbose=verbose,
         )
 
@@ -232,8 +226,8 @@ don't use the information outside those contexts, just say "I don't know." The t
         message = (
             args[0] if args else kwds["message"] if kwds and "message" in kwds else ""
         )
-        res = self.engine.chat(message)
-        if not self.stream:
+        res = self.engine.query(message)
+        if not self.streaming:
             res.is_dummy_stream = True
         return res
 

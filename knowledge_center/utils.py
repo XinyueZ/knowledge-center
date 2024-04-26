@@ -1,4 +1,5 @@
 import os
+from inspect import getframeinfo, stack
 from typing import Any
 
 import chromadb
@@ -8,8 +9,8 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from rich.pretty import pprint
 
 VERBOSE = True
-SIM_TOP_K = 5
-RERANK_TOP_K = 5
+SIM_TOP_K = 10
+RERANK_TOP_K = 10
 WIN_SZ = 3
 N_MULTI_STEPS = 5
 
@@ -23,8 +24,10 @@ CHUNK_OVERLAP_MIN_VALUE = 0
 def pretty_print(title: str = "Untitled", content: Any = None):
     if not VERBOSE:
         return
+
+    info = getframeinfo(stack()[1][0])
     print()
-    print(f"-- {title} --")
+    pprint(f":--> {title} --> {info.filename} --> {info.function} --> line: {info.lineno} --:")
     pprint(content)
 
 

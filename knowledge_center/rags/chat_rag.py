@@ -2,7 +2,8 @@ import os
 import sys
 from typing import Any, List, Union
 
-from llama_index.core import VectorStoreIndex
+from llama_index.core import (SimpleDirectoryReader, VectorStoreIndex,
+                              get_response_synthesizer)
 from llama_index.core.agent import AgentRunner, ReActAgent
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -16,12 +17,19 @@ from llama_index.core.chat_engine.types import (AGENT_CHAT_RESPONSE_TYPE,
                                                 ChatResponseMode,
                                                 StreamingAgentChatResponse)
 from llama_index.core.embeddings.utils import EmbedType
+from llama_index.core.indices.query.query_transform.base import \
+    StepDecomposeQueryTransform
+from llama_index.core.query_engine import (BaseQueryEngine,
+                                           MultiStepQueryEngine,
+                                           RetrieverQueryEngine)
 from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
 from llama_index.core.response_synthesizers import TreeSummarize
-from llama_index.core.retrievers import RouterRetriever
+from llama_index.core.retrievers import (RecursiveRetriever, RouterRetriever,
+                                         VectorIndexRetriever)
 from llama_index.core.selectors.llm_selectors import LLMSingleSelector
 from llama_index.core.tools import QueryEngineTool, RetrieverTool, ToolMetadata
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.legacy.postprocessor import SentenceTransformerRerank
 from llama_index.llms.langchain.base import LangChainLLM
 
 sys.path.append(
@@ -38,7 +46,9 @@ from knowledge_center.dashboard.description_crud import (connect_db,
 from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.base_rag import BaseRAG
-from knowledge_center.utils import VERBOSE, lli_from_chroma_store, pretty_print
+from knowledge_center.utils import (N_MULTI_STEPS, RERANK_TOP_K, SIM_TOP_K,
+                                    VERBOSE, lli_from_chroma_store,
+                                    pretty_print)
 
 
 class ChatRAG(BaseRAG):
@@ -65,65 +75,56 @@ class ChatRAG(BaseRAG):
             )
             for index_name in index_name_list
         ]
-        descriptions = fetch_descriptions(conn=connect_db())
-        desc_fmt = """Useful for queries on the content that covers the following dedicated topic:
----Topic:---
-{topic}.
----Notice:---
-The topic comes from the documents that have been igested in the index in the vector database.
-"""
+        descriptions = list(map(lambda x: x[1], fetch_descriptions(conn=connect_db())))
 
-        #         retrievers: List[BaseQueryEngine] = [
-        #             index.as_retriever() for index in index_list
-        #         ]
-        #         retriever_tools = [
-        #             RetrieverTool(
-        #                 retriever=retriever,
-        #                 metadata=ToolMetadata(
-        #                     name=index_name, description=desc_fmt.format(topic=description)
-        #                 ),
-        #             )
-        #             for index_name, retriever, description in zip(
-        #                 index_name_list, retrievers, descriptions
-        #             )
-        #         ]
-        #         retriever = RouterRetriever(
-        #             selector=LLMSingleSelector.from_defaults(llm=llm),
-        #             retriever_tools=retriever_tools,
-        #         )
-        #         self.engine = CondensePlusContextChatEngine.from_defaults(
-        #             retriever=retriever,
-        #             llm=llm,
-        #             system_prompt="""Answer the questions that user asked,
-        # if you don't know the answer based on the documents, just say "I don't know." or simple greeting, key the answer
-        # as simple as possible, without any additional information, instructions, or examples.
-        # """,
-        #         )
-
-        engines: List[BaseQueryEngine] = [
-            index.as_query_engine(llm=llm, streaming=True) for index in index_list
+        retrievers = [
+            RecursiveRetriever(
+                "vector",
+                retriever_dict={
+                    "vector": index.as_retriever(similarity_top_k=SIM_TOP_K)
+                },
+                verbose=verbose,
+            )
+            for index in index_list
         ]
+        query_engines: List[BaseQueryEngine] = [
+            RetrieverQueryEngine.from_args(
+                retriever,
+                response_synthesizer=get_response_synthesizer(
+                    streaming=streaming, llm=llm
+                ),
+                llm=llm,
+                node_postprocessors=[
+                    SentenceTransformerRerank(
+                        top_n=RERANK_TOP_K, model="BAAI/bge-reranker-base"
+                    )
+                ],
+                verbose=verbose,
+            )
+            for retriever in retrievers
+        ]
+
+        ###### Just query not question ######
         query_engine_tools = [
             QueryEngineTool(
                 query_engine=engine,
                 metadata=ToolMetadata(
-                    name=index_name, description=desc_fmt.format(topic=description)
+                    name=index_name,
+                    description="""Useful for queries (not questions) on the content that covers the following dedicated topic:
+---Topic:---
+{topic}.
+---Notice:---
+The topic comes from the documents that have been igested in the index in the vector database.
+""".format(
+                        topic=description
+                    ),
                 ),
             )
             for index_name, engine, description in zip(
-                index_name_list, engines, descriptions
+                index_name_list, query_engines, descriptions
             )
         ]
-        # query_engine_tools += [
-        #     QueryEngineTool(
-        #         query_engine=VanillaQueryEngine(llm=llm),
-        #         metadata=ToolMetadata(
-        #             name="General query tool",
-        #             description="""Useful for the general queries if cannot answer based on the documents and context.""",
-        #         ),
-        #     )
-        # ]
-        mix_tool = QueryEngineTool(
+        mix_query_tool = QueryEngineTool(
             query_engine=ReActAgent.from_llm(
                 tools=query_engine_tools,
                 llm=llm,
@@ -132,14 +133,79 @@ The topic comes from the documents that have been igested in the index in the ve
             ),
             metadata=ToolMetadata(
                 name="Mix query tool",
-                description="""Useful for the queries that cross all the contexts or documents, 
-don't use the information outside those contexts, just say "I don't know." """,
+                description="""Useful for the queries (not questions) that cross all the contexts and documents,
+don't use the information outside those contexts, just say "I don't know." The topics to context:
+---Topics:---
+{topics}.
+""".format(
+                    topics="\n---One Topic---\n".join(descriptions),
+                ),
+            ),
+        )
+        ###### Just question ######
+        question_engine_tools = [
+            QueryEngineTool(
+                query_engine=MultiStepQueryEngine(
+                    query_engine=engine,
+                    query_transform=StepDecomposeQueryTransform(
+                        llm=llm, verbose=verbose
+                    ),
+                    num_steps=N_MULTI_STEPS,
+                ),
+                metadata=ToolMetadata(
+                    name=index_name,
+                    description="""Useful for queries (questions) on the content that covers the following dedicated topic:
+---Topic:---
+{topic}.
+---Notice:---
+The topic comes from the documents that have been igested in the index in the vector database.
+""".format(
+                        topic=description
+                    ),
+                ),
+            )
+            for index_name, engine, description in zip(
+                index_name_list, query_engines, descriptions
+            )
+        ]
+        mix_questions_tool = QueryEngineTool(
+            query_engine=ReActAgent.from_llm(
+                tools=question_engine_tools,
+                llm=llm,
+                streaming=streaming,
+                verbose=verbose,
+            ),
+            metadata=ToolMetadata(
+                name="Mix query tool",
+                description="""Useful for the queries (questions) that cross all the contexts and documents,
+don't use the information outside those contexts, just say "I don't know." The topics to context:
+---Topics:---
+{topics}.
+""".format(
+                    topics="\n---One Topic---\n".join(descriptions),
+                ),
             ),
         )
 
+        ###### Fallback tools ######
+        fallback_tools = [
+            QueryEngineTool(
+                query_engine=VanillaQueryEngine(llm=llm),
+                metadata=ToolMetadata(
+                    name="General query tool",
+                    description="""Useful for the any general queries if cannot answer based on the documents and context.""",
+                ),
+            )
+        ]
+
+        ###### Bind all together ######
         self.engine = RouterQueryEngine(
             selector=LLMSingleSelector.from_defaults(llm=llm),
-            query_engine_tools=query_engine_tools + [mix_tool],
+            query_engine_tools=query_engine_tools
+            + [mix_query_tool]
+            + question_engine_tools
+            + [mix_questions_tool]
+            + fallback_tools,
             summarizer=TreeSummarize(
                 streaming=streaming,
                 use_async=False,
@@ -147,27 +213,12 @@ don't use the information outside those contexts, just say "I don't know." """,
             ),
             verbose=verbose,
         )
-
         self.engine = CondenseQuestionChatEngine.from_defaults(
             query_engine=self.engine,
             llm=llm,
             streaming=streaming,
             verbose=verbose,
         )
-
-        # self.engine = ReActAgent.from_llm(
-        #     tools=retriever_tools, #query_engine_tools
-        #     llm=llm,
-        #     streaming=streaming,
-        #     verbose=verbose,
-        # )
-
-        # self.engine = CondenseQuestionChatEngine.from_defaults(
-        #     query_engine=self.engine,
-        #     llm=llm,
-        #     streaming=streaming,
-        #     verbose=verbose,
-        # )
 
     def __call__(
         self, *args: Any, **kwds: Any
@@ -183,12 +234,12 @@ don't use the information outside those contexts, just say "I don't know." """,
 
 def main():
     chat_rag = ChatRAG(
-        llm=LangChainLLM(llms_fn_lookup["Ollama/command-r"]()),
+        llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
         embeddings=LangchainEmbedding(
             embeddings_fn_lookup["Ollama/nomic-embed-text"]()
         ),
         persist_directory="./vector_db",
-        verbose=False,
+        verbose=True,
     )
 
     pretty_print("I say", "HI")

@@ -4,7 +4,7 @@ from knowledge_center.models.llms import llms_fn_lookup
 
 def get_chat_llm_fn():
     return (
-        llms_fn_lookup["Groq/mixtral-8x7b-32768"]
+        llms_fn_lookup["ChatCohere"]
         if USE_CLOUD_MODELS()
         else llms_fn_lookup["Ollama/mistral"]
     )

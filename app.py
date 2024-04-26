@@ -240,16 +240,20 @@ Also list other stuffs, dependencies, 3rd parties supports mentioned in the cont
 
 
 async def chat_ui():
-    st.header("Chat for knowledge")
-    st.session_state["bot"] = (
-        ChatRAG(
-            llm=LangChainLLM(get_chat_llm_fn()),
-            verbose=True,
-            persist_directory="./vector_db",  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
+    st.subheader("Chat for knowledge")
+    try:
+        st.session_state["bot"] = (
+            ChatRAG(
+                llm=LangChainLLM(get_chat_llm_fn()()),
+                verbose=True,
+                persist_directory="./vector_db",  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
+            )
+            if "bot" not in st.session_state
+            else st.session_state["bot"]
         )
-        if "bot" not in st.session_state
-        else st.session_state["bot"]
-    )
+    except Exception as e:
+        st.error(f"No index found for: {e}")
+        return
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -270,7 +274,7 @@ async def chat_ui():
 async def main():
     st.sidebar.header("Knowledge Center")
     file_fullpath_list = files_uploader("# Upload files")
-    pretty_print("File fullpath list", file_fullpath_list)
+    #pretty_print("File fullpath list", file_fullpath_list)
 
     splitter_embeddings = None
     with st.sidebar:

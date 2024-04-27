@@ -4,7 +4,7 @@ from knowledge_center.models.llms import llms_fn_lookup
 
 def get_chat_llm_fn():
     return (
-        llms_fn_lookup["ChatCohere"]
+        llms_fn_lookup["OpenAI/gpt-3.5"]
         if USE_CLOUD_MODELS()
         else llms_fn_lookup["Ollama/mistral"]
     )

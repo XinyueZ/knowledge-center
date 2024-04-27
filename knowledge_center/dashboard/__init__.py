@@ -27,7 +27,7 @@ def get_smart_update_llm_fn() -> Callable[[], BaseLanguageModel]:
 def get_put_readme_embed_llm_fn():
     return (
         (
-            embeddings_fn_lookup["CohereEmbeddings"]
+            embeddings_fn_lookup["OpenAI/text-embedding-3-large"]
             if USE_CLOUD_MODELS()
             else embeddings_fn_lookup["Ollama/nomic-embed-text"]
         ),

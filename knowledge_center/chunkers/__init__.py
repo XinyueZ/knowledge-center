@@ -25,29 +25,29 @@ def get_chunker_splitter_embedings_selection(
             "SentenceWindowChunker": (
                 lambda _=None: SentenceWindowChunker(
                     embeddings=LangchainEmbedding(
-                        embeddings_fn_lookup["CohereEmbeddings"]()
+                        embeddings_fn_lookup["OpenAI/text-embedding-3-large"]()
                     ),
                 ),
                 "SentenceWindowNodeParser",
-                "CohereEmbeddings",
+                "OpenAI/text-embedding-3-large",
             ),
             "RecursiveCharacterTextChunker": (
                 lambda _=None: RecursiveCharacterTextChunker(
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    embeddings=embeddings_fn_lookup["CohereEmbeddings"](),
+                    embeddings=embeddings_fn_lookup["OpenAI/text-embedding-3-large"](),
                 ),
                 "RecursiveCharacterTextSplitter",
-                "CohereEmbeddings",
+                "OpenAI/text-embedding-3-large",
             ),
             "CharacterTextChunker": (
                 lambda _=None: CharacterTextChunker(
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    embeddings=embeddings_fn_lookup["CohereEmbeddings"](),
+                    embeddings=embeddings_fn_lookup["OpenAI/text-embedding-3-large"](),
                 ),
                 "CharacterTextSplitter",
-                "CohereEmbeddings",
+                "OpenAI/text-embedding-3-large",
             ),
         }
         if USE_CLOUD_MODELS()

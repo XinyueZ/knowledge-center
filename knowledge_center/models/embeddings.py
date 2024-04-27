@@ -18,13 +18,13 @@ embeddings_fn_lookup: Dict[str, Callable[[], Embeddings]] = (
             model_name="all-MiniLM-L6-v2"
         ),
         "OpenAI/text-embedding-3-large": lambda: OpenAIEmbeddings(
-            model_name="text-embedding-3-large"
+            model="text-embedding-3-large"
         ),
         "OpenAI/text-embedding-3-small": lambda: OpenAIEmbeddings(
-            model_name="text-embedding-3-small"
+            model="text-embedding-3-small"
         ),
         "OpenAI/text-embedding-ada-002": lambda: OpenAIEmbeddings(
-            model_name="text-embedding-ada-002"
+            model="text-embedding-ada-002"
         ),
     }
     if USE_CLOUD_MODELS()

@@ -16,10 +16,10 @@ def files_uploader(prompt: str, storage_dir: str = "./tmp") -> List[str]:
         )
         if not uploaded_docs:
             st.session_state["file_fullpath_list"] = None
-            pretty_print("No file uploaded")
+            #pretty_print("No file uploaded")
             return None
         if uploaded_docs:
-            pretty_print("Uploaded files", uploaded_docs)
+            #pretty_print("Uploaded files", uploaded_docs)
             if not os.path.exists(storage_dir):
                 os.makedirs(storage_dir)
             file_fullpath_list = []

@@ -246,6 +246,7 @@ async def chat_ui():
             ChatRAG(
                 llm=LangChainLLM(get_chat_llm_fn()()),
                 verbose=True,
+                streaming=True,
                 persist_directory="./vector_db",  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
             )
             if "bot" not in st.session_state
@@ -267,14 +268,20 @@ async def chat_ui():
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 res = st.session_state["bot"](prompt)
-            response = st.write(str(res.response))
-        st.session_state.messages.append({"role": "assistant", "content": response})
+            try:
+                content = st.write_stream(res.response_gen)
+            except Exception as e:
+                pretty_print("Cannot streaming", str(e))
+                st.write(res.response)
+                content = res.response
+            pretty_print("content", content)
+        st.session_state.messages.append({"role": "assistant", "content": content})
 
 
 async def main():
     st.sidebar.header("Knowledge Center")
     file_fullpath_list = files_uploader("# Upload files")
-    #pretty_print("File fullpath list", file_fullpath_list)
+    # pretty_print("File fullpath list", file_fullpath_list)
 
     splitter_embeddings = None
     with st.sidebar:

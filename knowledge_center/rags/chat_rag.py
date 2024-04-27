@@ -1,10 +1,12 @@
 import os
 import sys
+from turtle import st
 from typing import Any, Dict, List, Sequence, Union
 
 from llama_index.core import (SimpleDirectoryReader, VectorStoreIndex,
                               get_response_synthesizer)
-from llama_index.core.agent import AgentRunner, ReActAgent
+from llama_index.core.agent import (AgentRunner, FunctionCallingAgentWorker,
+                                    ReActAgent)
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.base import BaseLLM
@@ -23,7 +25,8 @@ from llama_index.core.query_engine import (BaseQueryEngine,
                                            MultiStepQueryEngine,
                                            RetrieverQueryEngine)
 from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.core.response_synthesizers import TreeSummarize
+from llama_index.core.response_synthesizers import Refine, TreeSummarize
+from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.retrievers import (RecursiveRetriever, RouterRetriever,
                                          VectorIndexRetriever)
 from llama_index.core.selectors.llm_selectors import LLMSingleSelector
@@ -97,7 +100,9 @@ class ChatRAG(BaseRAG):
             RetrieverQueryEngine.from_args(
                 retriever,
                 response_synthesizer=get_response_synthesizer(
-                    streaming=streaming, llm=llm
+                    streaming=streaming,
+                    llm=llm,
+                    response_mode=ResponseMode.REFINE,
                 ),
                 llm=llm,
                 node_postprocessors=[
@@ -110,15 +115,14 @@ class ChatRAG(BaseRAG):
             for retriever in retrievers
         ]
 
-        ###### Just query not question ######
+        ###### Simple query approach ######
         query_engine_tools = [
             QueryEngineTool(
                 query_engine=engine,
                 metadata=ToolMetadata(
                     name=index_name,
-                    description="""Useful for queries (not questions) on the content that covers the following dedicated topic:
-{topic}.
-""".format(
+                    description="""Useful for simple queries on the content that covers the following dedicated topic:
+{topic}.""".format(
                         topic=description
                     ),
                 ),
@@ -130,23 +134,22 @@ class ChatRAG(BaseRAG):
         mix_query_tool = QueryEngineTool(
             query_engine=ReActAgent.from_llm(
                 tools=query_engine_tools,
-                llm=llm,
                 streaming=streaming,
+                llm=llm,
                 verbose=verbose,
             ),
             metadata=ToolMetadata(
                 name="Mix query tool",
-                description="""Useful for the queries (not questions) that cross all the contexts and documents,
+                description="""Useful for simple queries that cross all the contexts and documents,
 don't use the information outside those contexts, just say "I don't know." The topics to context:
 ---Topics:---
-{topics}.
-""".format(
+{topics}.""".format(
                     topics="\n---One Topic---\n".join(descriptions),
                 ),
             ),
         )
-        ###### Just question ######
-        question_engine_tools = [
+        ###### Complex query approach ######
+        complex_engine_tools = [
             QueryEngineTool(
                 query_engine=MultiStepQueryEngine(
                     query_engine=engine,
@@ -154,12 +157,16 @@ don't use the information outside those contexts, just say "I don't know." The t
                         llm=llm, verbose=verbose
                     ),
                     num_steps=N_MULTI_STEPS,
+                    response_synthesizer=get_response_synthesizer(
+                        streaming=streaming,
+                        llm=llm,
+                        response_mode=ResponseMode.REFINE,
+                    ),
                 ),
                 metadata=ToolMetadata(
                     name=index_name,
-                    description="""Useful for queries (questions) on the content that covers the following dedicated topic:
-{topic}.
-""".format(
+                    description="""Useful for complex queries on the content that covers the following dedicated topic:
+{topic}.""".format(
                         topic=description
                     ),
                 ),
@@ -168,20 +175,19 @@ don't use the information outside those contexts, just say "I don't know." The t
                 index_name_list, query_engines, descriptions
             )
         ]
-        mix_questions_tool = QueryEngineTool(
+        mix_complex_tool = QueryEngineTool(
             query_engine=ReActAgent.from_llm(
-                tools=question_engine_tools,
-                llm=llm,
+                tools=complex_engine_tools,
                 streaming=streaming,
+                llm=llm,
                 verbose=verbose,
             ),
             metadata=ToolMetadata(
                 name="Mix query tool",
-                description="""Useful for the queries (questions) that cross all the contexts and documents,
+                description="""Useful for complex queries that cross all the contexts and documents,
 don't use the information outside those contexts, just say "I don't know." The topics to context:
 ---Topics:---
-{topics}.
-""".format(
+{topics}.""".format(
                     topics="\n---One Topic---\n".join(descriptions),
                 ),
             ),
@@ -200,15 +206,12 @@ don't use the information outside those contexts, just say "I don't know." The t
 
         ###### Bind all together ######
         self.engine = RouterQueryEngine(
-            selector=LLMSingleSelector.from_defaults(
-                llm=llm,
-                prompt_template_str="Select only the content that is most relevant to the query.",
-            ),
+            selector=LLMSingleSelector.from_defaults(llm=llm),
             query_engine_tools=query_engine_tools
-            + [mix_questions_tool]
-            + fallback_tools
+            + complex_engine_tools
+            + [mix_complex_tool]
             + [mix_query_tool]
-            + question_engine_tools,
+            + fallback_tools,
             summarizer=TreeSummarize(
                 streaming=streaming,
                 use_async=True,

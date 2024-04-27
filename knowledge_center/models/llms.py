@@ -47,12 +47,12 @@ llms_fn_lookup: Dict[str, Callable[[], BaseLanguageModel]] = (
             model="claude-3-haiku-20240307",
             temperature=0,
         ),
-        "OpenAI/gpt-4-turbo": lambda: ChatOpenAI(
+        "OpenAI/gpt-4": lambda: ChatOpenAI(
             model="gpt-4-turbo",
             temperature=0,
         ),
-        "OpenAI/gpt-3.5-turbo-0125": lambda: ChatAnthropic(
-            model="gpt-3.5-turbo-0125",
+        "OpenAI/gpt-3.5": lambda: ChatOpenAI(
+            model="gpt-3.5-turbo",
             temperature=0,
         ),
     }

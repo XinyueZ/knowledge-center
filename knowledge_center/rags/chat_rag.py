@@ -206,7 +206,7 @@ don't use the information outside those contexts, just say "I don't know." The t
 
         ###### Bind all together ######
         self.engine = RouterQueryEngine(
-            selector=LLMSingleSelector.from_defaults(llm=llm),
+            selector=LLMSingleSelector.from_defaults(llm=llm,prompt_template_str="Select the tool that matches the best with the description of the tool."),
             query_engine_tools=query_engine_tools
             + complex_engine_tools
             + [mix_complex_tool]

@@ -13,6 +13,15 @@ The purpose of this repository is that we demonstrate how to ingest data from va
 - <img src="https://user-images.githubusercontent.com/891664/227103090-6624bf7d-9524-4e05-9d2c-c28d5d451481.png" alt="Chroma logo"  width="25%"></img>
 - <img alt="ollama"  src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7" width="5%" height="5%"> Ollama
 
+# RAG 
+
+Although this repo is mainly used to store some "knowledge", for example, the description of the index or simple Q&A (chat with your doc) uses RAG, trying to implement some of the latest and very popular RAG methods.
+
+Also, when storing the index, try to follow the more popular topics.
+
+<img alt="RAG"  src="https://github.com/XinyueZ/knowledge-center/blob/main/assets/rag.png" width="45%" height="45%">
+
+
 # Setup
 
 ### Conda

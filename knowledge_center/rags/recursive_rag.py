@@ -4,8 +4,9 @@ import sys
 from math import e
 from typing import Any, Sequence
 
-from llama_index.core import (SimpleDirectoryReader, VectorStoreIndex,
-                              get_response_synthesizer)
+from llama_index.core import (SimpleDirectoryReader, StorageContext,
+                              VectorStoreIndex, get_response_synthesizer,
+                              load_index_from_storage)
 from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.llms.llm import LLM
 from llama_index.core.node_parser import SentenceWindowNodeParser
@@ -14,6 +15,9 @@ from llama_index.core.postprocessor.metadata_replacement import \
 from llama_index.core.query_engine import BaseQueryEngine, RetrieverQueryEngine
 from llama_index.core.retrievers import RecursiveRetriever
 from llama_index.core.schema import Document
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore
+from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from llama_index.legacy.postprocessor import SentenceTransformerRerank
 from llama_index.llms.langchain.base import LangChainLLM
@@ -41,6 +45,7 @@ class RecursiveRAG(BaseRAG):
         llm: LLM,
         embeddings: EmbedType,
         docs: Sequence[Document],
+        persist_directory: str,
         streaming=True,
         verbose=VERBOSE,
     ) -> None:
@@ -52,15 +57,31 @@ class RecursiveRAG(BaseRAG):
         )
         synth = get_response_synthesizer(streaming=streaming, llm=llm)
         nodes = node_parser.build_window_nodes_from_documents(docs)
+        if os.path.exists(persist_directory):
+            storage_context = StorageContext.from_defaults(
+                docstore=SimpleDocumentStore.from_persist_dir(
+                    persist_dir=persist_directory
+                ),
+                vector_store=SimpleVectorStore.from_persist_path(
+                    persist_path=os.path.join(
+                        persist_directory, "default__vector_store.json"
+                    )
+                ),
+                index_store=SimpleIndexStore.from_persist_dir(
+                    persist_dir=persist_directory
+                ),
+            )
+            index = load_index_from_storage(storage_context, embed_model=embeddings)
+        else:
+            index = VectorStoreIndex(
+                nodes,
+                embed_model=embeddings,
+                show_progress=True,
+            )
+            index.storage_context.persist(persist_dir=persist_directory)
         retriever = RecursiveRetriever(
             "vector",
-            retriever_dict={
-                "vector": VectorStoreIndex(
-                    nodes,
-                    embed_model=embeddings,
-                    show_progress=True,
-                ).as_retriever(similarity_top_k=SIM_TOP_K)
-            },
+            retriever_dict={"vector": index.as_retriever(similarity_top_k=SIM_TOP_K)},
             verbose=verbose,
         )
         rerank = SentenceTransformerRerank(
@@ -89,6 +110,7 @@ async def main():
     docs = SimpleDirectoryReader(input_files=["README.md"]).load_data()
     rag = RecursiveRAG(
         llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
+        persist_directory="./knowledge_center/chat/vector_db",
         embeddings=LangchainEmbedding(
             embeddings_fn_lookup["Ollama/nomic-embed-text"]()
         ),

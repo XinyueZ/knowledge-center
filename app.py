@@ -223,6 +223,7 @@ async def show_readme():
             verbose=False,
             llm=LangChainLLM(llm_fn()),
             embeddings=LangchainEmbedding(embed_fn()),
+            persist_directory = "./knowledge_center/chat/vector_db",
             docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
         ).query(
             query="""Briefly introduce the repository, give use sections:

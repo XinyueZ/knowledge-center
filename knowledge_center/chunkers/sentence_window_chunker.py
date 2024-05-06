@@ -33,7 +33,11 @@ class SentenceWindowChunker(BaseChunker):
             window_metadata_key="window",
             original_text_metadata_key="original_text",
         )
-        docs = list(map(SentenceWindowChunker._cnvt, documents))
+        doc_0 = documents[0]
+        if isinstance(doc_0, lc_Document):
+            docs = list(map(SentenceWindowChunker._cnvt, documents))
+        else:
+            docs = documents
         nodes: List[BaseNode] = node_parser.build_window_nodes_from_documents(docs)
 
         return nodes

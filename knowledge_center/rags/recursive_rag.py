@@ -72,6 +72,7 @@ class RecursiveRAG(BaseRAG):
             llm=llm,
             node_postprocessors=[postproc, rerank],
             verbose=verbose,
+            streaming=streaming,
         )
 
     async def aquery(self, query: str) -> RESPONSE_TYPE:

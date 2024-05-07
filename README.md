@@ -13,14 +13,13 @@ The purpose of this repository is that we demonstrate how to ingest data from va
 - <img src="https://user-images.githubusercontent.com/891664/227103090-6624bf7d-9524-4e05-9d2c-c28d5d451481.png" alt="Chroma logo"  width="25%"></img>
 - <img alt="ollama"  src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7" width="5%" height="5%"> Ollama
 
-# RAG 
+# RAG
 
 Although this repo is mainly used to store some "knowledge", for example, the description of the index or simple Q&A (chat with your doc) uses RAG, trying to implement some of the latest and very popular RAG methods.
 
 Also, when storing the index, try to follow the more popular topics.
 
 <img alt="RAG"  src="https://github.com/XinyueZ/knowledge-center/blob/main/assets/rag.png" width="45%" height="45%">
-
 
 # Setup
 
@@ -59,6 +58,11 @@ streamlit run app.py --server.port 8011 --server.enableCORS false
 - [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/chat_rag.py)
 - [standalone code](https://github.com/XinyueZ/chat-your-doc/blob/master/advanced/llamaindex_adaptive_rag.py)
 
+##### [Dense X Retrieval: What Retrieval Granularity Should We Use?](https://arxiv.org/abs/2312.06648)
+
+- [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/dense_x_retrieval_chunker.py)
+- [standalone notebook](https://github.com/XinyueZ/chat-your-doc/blob/master/notebooks/DenseXRetrieval.ipynb)
+
 # Ollama setup
 
 You must install Ollama to active the local models.
@@ -74,25 +78,23 @@ Check file  [embeddings.py](https://github.com/XinyueZ/knowledge-center/blob/mai
 
 ## LLMs
 
-
 Check file  [llms.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/models/llms.py) to find the LLMs models.
 
 # Model config
 
 Different feature can use different models and we differentiate them in different parts.
 
-## For ingestion (chunking)
+## For ingestion (chunking and indexing)
 
-Check file  [__init__.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/__init__.py)
+Check file  [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/__init__.py)
 
 ## For chat
 
-Check file  [__init__.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chat/__init__.py)
+Check file  [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chat/__init__.py)
 
-## For Dashboard
+## For dashboard
 
-Check file  [__init__.py](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/dashboard/__init__.py), description generation, smart update of description etc.
-
+Check file  [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/dashboard/__init__.py), description generation, smart update of description etc.
 
 # Key exports for LLMs and Embeddings
 

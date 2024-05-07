@@ -1,4 +1,3 @@
-import os
 from typing import Iterable, List, Union
 
 from langchain_core.documents import Document as lc_Document

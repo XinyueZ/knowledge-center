@@ -1,6 +1,5 @@
 import os
 import sys
-from turtle import st
 from typing import Any, Dict, List, Sequence, Union
 
 from llama_index.core import (SimpleDirectoryReader, VectorStoreIndex,
@@ -92,6 +91,7 @@ class ChatRAG(BaseRAG):
                 retriever_dict={
                     "vector": index.as_retriever(similarity_top_k=SIM_TOP_K)
                 },
+                #node_dict={n.node_id: n for n in index.nodes},
                 verbose=verbose,
             )
             for index in index_list

@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import shutil
 from datetime import datetime
@@ -14,7 +13,7 @@ from llama_index.llms.langchain.base import LangChainLLM
 from tqdm.asyncio import tqdm
 
 from knowledge_center.chat import get_chat_llm_fn
-from knowledge_center.chunkers import get_chunker_splitter_embedings_selection
+from knowledge_center.chunkers import get_chunker_fn_selections
 from knowledge_center.dashboard import (get_put_readme_embed_llm_fn,
                                         get_smart_update_llm_fn)
 from knowledge_center.dashboard.description_crud import (
@@ -41,37 +40,32 @@ DB_PATH = "./vector_db"
 
 async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
     with st.sidebar:
+        chunker_fn_selections = get_chunker_fn_selections()
+        chunker_names = list(chunker_fn_selections.keys())
         chunker_selector = st.selectbox(
             "Chunker",
-            [
-                "RecursiveCharacterTextChunker",
-                "CharacterTextChunker",
-                "SentenceTransformersTokenTextChunker",
-                "SentenceWindowChunker",
-            ],
+            chunker_names,
             index=0,
             key="splitter_selector",
         )
         chunk_size = None
-        if "Sentence" not in chunker_selector:
+        if chunker_fn_selections[chunker_selector][-1]:
             chunk_size = st.number_input(
                 "chunk_size",
                 value=CHUNK_SIZE_DEFAULT,
                 min_value=CHUNK_SIZE_MIN_VALUE,
             )
+        chunk_overlap = None
+        if chunker_fn_selections[chunker_selector][-2]:
+            chunk_overlap = st.number_input(
+                "chunk_overlap",
+                value=CHUNK_OVERLAP_DEFAULT,
+                min_value=CHUNK_OVERLAP_MIN_VALUE,
+            )
 
-        chunk_overlap = st.number_input(
-            "chunk_overlap",
-            value=CHUNK_OVERLAP_DEFAULT,
-            min_value=CHUNK_OVERLAP_MIN_VALUE,
-        )
-
-        chunker_and_embedings_selection = get_chunker_splitter_embedings_selection(
-            chunk_overlap, chunk_size
-        )
-        chunker = chunker_and_embedings_selection[chunker_selector][0]()
-        splitter_name = chunker_and_embedings_selection[chunker_selector][1]
-        embeddings_name = chunker_and_embedings_selection[chunker_selector][2]
+        chunker = chunker_fn_selections[chunker_selector][0](chunk_overlap, chunk_size)
+        splitter_name = chunker_fn_selections[chunker_selector][1]
+        embeddings_name = chunker_fn_selections[chunker_selector][2]
         index_name = st.text_input("Index name", placeholder="index name").strip()
         if index_name is None or index_name == "":
             st.error("Please provide a name for the collection")
@@ -223,7 +217,7 @@ async def show_readme():
             verbose=False,
             llm=LangChainLLM(llm_fn()),
             embeddings=LangchainEmbedding(embed_fn()),
-            persist_directory = "./knowledge_center/chat/vector_db",
+            persist_directory="./knowledge_center/chat/vector_db",
             docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
         ).query(
             query="""Briefly introduce the repository, give use sections:

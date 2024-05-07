@@ -221,9 +221,11 @@ async def show_readme():
             docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
         ).query(
             query="""Briefly introduce the repository, give use sections:
-1. list the required APIs, libraries in Bash Export Code Style.
-2. specify the setup requirements, pip and conda.
-3. approach to run
+- list the required APIs, libraries in Bash Export Code Style.
+- specify the setup requirements, pip and conda.
+- approach to run
+- list references.
+- and so on...
 
 Also list other stuffs, dependencies, 3rd parties supports mentioned in the content that you find important."""
         )

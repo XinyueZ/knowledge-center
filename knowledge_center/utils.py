@@ -1,9 +1,10 @@
 import os
 from inspect import getframeinfo, stack
-from typing import Any
+from typing import Any, Dict, List
 
 import chromadb
 from chromadb.api import ClientAPI
+from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from rich.pretty import pprint
@@ -27,7 +28,9 @@ def pretty_print(title: str = "Untitled", content: Any = None):
 
     info = getframeinfo(stack()[1][0])
     print()
-    pprint(f":--> {title} --> {info.filename} --> {info.function} --> line: {info.lineno} --:")
+    pprint(
+        f":--> {title} --> {info.filename} --> {info.function} --> line: {info.lineno} --:"
+    )
     pprint(content)
 
 
@@ -38,3 +41,7 @@ def lli_from_chroma_store(
     db: ClientAPI = chromadb.PersistentClient(path=path)
     chroma_collection = db.get_or_create_collection(index_name)
     return ChromaVectorStore(chroma_collection)
+
+
+def lli_id2node(nodes: List[TextNode | BaseNode]) -> Dict[str, TextNode | BaseNode]:
+    return {n.node_id: n for n in nodes}

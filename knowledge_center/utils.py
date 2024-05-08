@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 
 import chromadb
 from chromadb.api import ClientAPI
+from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.chroma import ChromaVectorStore
@@ -45,3 +46,15 @@ def lli_from_chroma_store(
 
 def lli_id2node(nodes: List[TextNode | BaseNode]) -> Dict[str, TextNode | BaseNode]:
     return {n.node_id: n for n in nodes}
+
+
+def get_nodes_from_vector_index(vector_index: VectorStoreIndex) -> Dict[str, BaseNode]:
+    # Workaround for the issue:
+    # https://github.com/run-llama/llama_index/issues/9893#issuecomment-1880245586
+    # https://www.perplexity.ai/search/not-found-in-lOhy3SoxTNyXkNxofl7UOQ
+    # We can then get nodes from vector store like chroma store.
+    retriever = vector_index.as_retriever(similarity_top_k=9999999999999999)
+    source_nodes = retriever.retrieve("*")
+    nodes = [x.node for x in source_nodes]
+    nodes_dict = {node.node_id: node for node in nodes}
+    return nodes_dict

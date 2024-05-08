@@ -18,7 +18,7 @@ def get_rag_llm_fn() -> Callable[[], BaseLanguageModel]:
 
 def get_smart_update_llm_fn() -> Callable[[], BaseLanguageModel]:
     return (
-        llms_fn_lookup["Groq/mixtral-8x7b-32768"]
+        llms_fn_lookup["OpenAI/gpt-3.5"]
         if USE_CLOUD_MODELS()
         else llms_fn_lookup["Ollama/mixtral"]
     )

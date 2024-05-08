@@ -49,8 +49,8 @@ from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.base_rag import BaseRAG
 from knowledge_center.utils import (N_MULTI_STEPS, RERANK_TOP_K, SIM_TOP_K,
-                                    VERBOSE, lli_from_chroma_store,
-                                    pretty_print)
+                                    VERBOSE, get_nodes_from_vector_index,
+                                    lli_from_chroma_store, pretty_print)
 
 
 class ChatRAG(BaseRAG):
@@ -91,7 +91,7 @@ class ChatRAG(BaseRAG):
                 retriever_dict={
                     "vector": index.as_retriever(similarity_top_k=SIM_TOP_K)
                 },
-                #node_dict={n.node_id: n for n in index.nodes},
+                node_dict=get_nodes_from_vector_index(index),
                 verbose=verbose,
             )
             for index in index_list
@@ -206,7 +206,10 @@ don't use the information outside those contexts, just say "I don't know." The t
 
         ###### Bind all together ######
         self.engine = RouterQueryEngine(
-            selector=LLMSingleSelector.from_defaults(llm=llm,prompt_template_str="Select the tool that matches the best with the description of the tool."),
+            selector=LLMSingleSelector.from_defaults(
+                llm=llm,
+                prompt_template_str="Select the tool that matches the best with the description of the tool.",
+            ),
             query_engine_tools=query_engine_tools
             + complex_engine_tools
             + [mix_complex_tool]

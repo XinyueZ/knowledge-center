@@ -22,6 +22,8 @@ CHUNK_SIZE_MIN_VALUE = 1000
 CHUNK_OVERLAP_DEFAULT = 0
 CHUNK_OVERLAP_MIN_VALUE = 0
 
+INDEX_PERSIST_DIR = "./vector_db"
+
 
 def pretty_print(title: str = "Untitled", content: Any = None):
     if not VERBOSE:
@@ -53,7 +55,7 @@ def get_nodes_from_vector_index(vector_index: VectorStoreIndex) -> Dict[str, Bas
     # https://github.com/run-llama/llama_index/issues/9893#issuecomment-1880245586
     # https://www.perplexity.ai/search/not-found-in-lOhy3SoxTNyXkNxofl7UOQ
     # We can then get nodes from vector store like chroma store.
-    retriever = vector_index.as_retriever(similarity_top_k=9999999999999999)
+    retriever = vector_index.as_retriever(similarity_top_k=999999999999)
     source_nodes = retriever.retrieve("*")
     nodes = [x.node for x in source_nodes]
     nodes_dict = {node.node_id: node for node in nodes}

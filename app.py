@@ -27,15 +27,12 @@ from knowledge_center.rags.recursive_rag import RecursiveRAG
 from knowledge_center.utils import (CHUNK_OVERLAP_DEFAULT,
                                     CHUNK_OVERLAP_MIN_VALUE,
                                     CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
-                                    pretty_print)
+                                    INDEX_PERSIST_DIR, pretty_print)
 
 nest_asyncio.apply()
 
 
 st.set_page_config(layout="wide")
-
-
-DB_PATH = "./vector_db"
 
 
 async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
@@ -71,7 +68,9 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
             st.error("Please provide a name for the collection")
             return
         else:
-            if os.path.exists(DB_PATH) and index_name in os.listdir(DB_PATH):
+            if os.path.exists(INDEX_PERSIST_DIR) and index_name in os.listdir(
+                INDEX_PERSIST_DIR
+            ):
                 st.error("Duplicate index name")
                 return
             if st.button("Ingest", key="ingest_button"):
@@ -88,7 +87,7 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
 
                     chunker(
                         documents=docs,
-                        persist_directory=DB_PATH,
+                        persist_directory=INDEX_PERSIST_DIR,
                         index_name=index_name,
                     )
                 st.success("Done!")
@@ -96,18 +95,18 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
 
 
 async def dashboard(splitter_name: str, embeddings_name: str):
-    if not os.path.exists(DB_PATH) or len(os.listdir(DB_PATH)) < 1:
+    if not os.path.exists(INDEX_PERSIST_DIR) or len(os.listdir(INDEX_PERSIST_DIR)) < 1:
         st.info("No index found")
         return
     index_fullpath_list = [
-        os.path.join(DB_PATH, index_dir_name)
-        for index_dir_name in os.listdir(DB_PATH)
+        os.path.join(INDEX_PERSIST_DIR, index_dir_name)
+        for index_dir_name in os.listdir(INDEX_PERSIST_DIR)
         if index_dir_name
     ]
 
     with st.spinner("..."):
         description_list = await genenerate_and_load_description(
-            os.path.join(DB_PATH),
+            os.path.join(INDEX_PERSIST_DIR),
             splitter_name,
             embeddings_name,
             index_fullpath_list,
@@ -154,7 +153,7 @@ async def dashboard(splitter_name: str, embeddings_name: str):
             st.subheader("")
 
             def apply_delete(index_name: str):
-                shutil.rmtree(os.path.join(DB_PATH, index_name))
+                shutil.rmtree(os.path.join(INDEX_PERSIST_DIR, index_name))
                 delete_description(connect_db(), index_name)
 
             if st.button(
@@ -238,13 +237,34 @@ Also list other stuffs, dependencies, 3rd parties supports mentioned in the cont
 
 async def chat_ui():
     st.subheader("Chat for knowledge")
+
+    def _chat_index_selection_change():
+        if "bot" in st.session_state:
+            del st.session_state["bot"]
+            pretty_print("bot", "flushed bot")
+        if "messages" in st.session_state:
+            del st.session_state["messages"]
+            pretty_print("bot", "flushed messages")
+
+    index_name = st.selectbox(
+        "Indices",
+        [
+            name
+            for name in os.listdir(INDEX_PERSIST_DIR)
+            if os.path.isdir(os.path.join(INDEX_PERSIST_DIR, name))
+        ],
+        index=0,
+        key="chat_index_selector",
+        on_change=_chat_index_selection_change,
+    )
     try:
         st.session_state["bot"] = (
             ChatRAG(
                 llm=LangChainLLM(get_chat_llm_fn()()),
                 verbose=True,
                 streaming=True,
-                persist_directory="./vector_db",  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
+                persist_directory=INDEX_PERSIST_DIR,  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
+                index_name=index_name,
             )
             if "bot" not in st.session_state
             else st.session_state["bot"]

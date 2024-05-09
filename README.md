@@ -55,7 +55,7 @@ streamlit run app.py --server.port 8011 --server.enableCORS false
 
 ##### [Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity](https://arxiv.org/abs/2403.14403)
 
-- [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/chat_rag.py)
+- [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/adaptive_rag.py)
 - [standalone code](https://github.com/XinyueZ/chat-your-doc/blob/master/advanced/llamaindex_adaptive_rag.py)
 
 ##### [Dense X Retrieval: What Retrieval Granularity Should We Use?](https://arxiv.org/abs/2312.06648)

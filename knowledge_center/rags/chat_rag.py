@@ -39,7 +39,7 @@ class ChatRAG(BaseRAG):
         self,
         llm: BaseLLM,
         persist_directory: str,
-        index_name: str = None,
+        index_name: str,
         streaming: bool = False,
         verbose=VERBOSE,
     ) -> None:
@@ -85,6 +85,7 @@ class ChatRAG(BaseRAG):
 def main():
     chat_rag = ChatRAG(
         llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
+        index_name="chat",
         persist_directory="./vector_db",
         verbose=True,
     )

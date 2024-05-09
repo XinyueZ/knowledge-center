@@ -243,30 +243,30 @@ don't use the information outside those contexts, just say "I don't know." The t
 
 
 def main():
-    chat_rag = AdaptiveRAG(
+    rag = AdaptiveRAG(
         llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
         persist_directory="./vector_db",
         verbose=True,
     )
 
     pretty_print("I say", "HI")
-    res = chat_rag("HI")
+    res = rag("HI")
     pretty_print("AI say", res.response)
 
     pretty_print("I say", "Briefing all the content you have.")
-    res = chat_rag("Briefing all the content you have.")
+    res = rag("Briefing all the content you have.")
     pretty_print("AI say", res.response)
 
     pretty_print("I say", "Briefing the 2nd content you have.")
-    res = chat_rag("Briefing the 2nd content you have.")
+    res = rag("Briefing the 2nd content you have.")
     pretty_print("AI say", res.response)
 
     pretty_print("I say", "hey, my name is Bob.")
-    res = chat_rag("hey, my name is Bob.")
+    res = rag("hey, my name is Bob.")
     pretty_print("AI say", res.response)
 
     pretty_print("I say", "Repeat my name if you could have remembered.")
-    res = chat_rag("Repeat my name if you could have remembered.")
+    res = rag("Repeat my name if you could have remembered.")
     pretty_print("AI say", res.response)
 
 

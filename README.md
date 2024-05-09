@@ -46,7 +46,7 @@ streamlit run app.py --server.port 8011 --server.enableCORS false
 
 ##### [Precise Zero-Shot Dense Retrieval without Relevance Labels](https://arxiv.org/pdf/2212.10496.pdf) (Hypothetical Document Embeddings(HyDE))
 
-- [My comments](https://teetracker.medium.com/rag-with-hypothetical-document-embeddings-hyde-0edeca23f891)
+- [RAG with Hypothetical Document Embeddings(HyDE)](https://teetracker.medium.com/rag-with-hypothetical-document-embeddings-hyde-0edeca23f891)
 - [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/hyde.py)
 
 ##### [Advanced Retrieval-Augmented Generation: From Theory to LlamaIndex Implementation](https://towardsdatascience.com/advanced-retrieval-augmented-generation-from-theory-to-llamaindex-implementation-4de1464a9930)
@@ -62,6 +62,12 @@ streamlit run app.py --server.port 8011 --server.enableCORS false
 
 - [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/dense_x_retrieval_chunker.py)
 - [standalone notebook](https://github.com/XinyueZ/chat-your-doc/blob/master/notebooks/DenseXRetrieval.ipynb)
+
+##### Multi or Subqueries
+
+- [code](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/rags/sub_queries_rag.py)
+- [RAG with Multi-Query pattern](https://teetracker.medium.com/rag-with-multi-query-pattern-7272deb3401a)
+- [LangChain / Llama-Index: RAG with Multi-Query Retrieval](https://teetracker.medium.com/langchain-llama-index-rag-with-multi-query-retrieval-4e7df1a62f83)
 
 # Ollama setup
 
@@ -84,17 +90,13 @@ Check file  [llms.py](https://github.com/XinyueZ/knowledge-center/blob/main/know
 
 Different feature can use different models and we differentiate them in different parts.
 
-## For ingestion (chunking and indexing)
-
-Check file  [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/__init__.py)
-
-## For chat
-
-Check file  [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chat/__init__.py)
-
-## For dashboard
-
-Check file  [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/dashboard/__init__.py), description generation, smart update of description etc.
+| Title | __init__.py |
+|-------|-------------|
+| ingestion (chunking and indexing) | [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chunkers/__init__.py) |
+| search | [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/search/__init__.py) |
+| chat | [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/chat/__init__.py) |
+| readme | [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/readme/__init__.py) |
+| dashboard | [`__init__.py`](https://github.com/XinyueZ/knowledge-center/blob/main/knowledge_center/dashboard/__init__.py) |
 
 # Key exports for LLMs and Embeddings
 

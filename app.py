@@ -14,8 +14,7 @@ from tqdm.asyncio import tqdm
 
 from knowledge_center.chat import get_chat_llm_fn
 from knowledge_center.chunkers import get_chunker_fn_selections
-from knowledge_center.dashboard import (get_put_readme_embed_llm_fn,
-                                        get_smart_update_llm_fn)
+from knowledge_center.dashboard import get_smart_update_llm_fn
 from knowledge_center.dashboard.description_crud import (
     connect_db, delete_description, genenerate_and_load_description,
     update_description_by_index)
@@ -24,6 +23,9 @@ from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.rags.chat_rag import ChatRAG
 from knowledge_center.rags.hyde import HyDE
 from knowledge_center.rags.recursive_rag import RecursiveRAG
+from knowledge_center.rags.sub_queries_rag import SubQueriesRAG
+from knowledge_center.readme import get_put_readme_embed_llm_fn
+from knowledge_center.search import get_search_llm_fn
 from knowledge_center.utils import (CHUNK_OVERLAP_DEFAULT,
                                     CHUNK_OVERLAP_MIN_VALUE,
                                     CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
@@ -209,14 +211,14 @@ async def dashboard(splitter_name: str, embeddings_name: str):
         st.write("---")
 
 
-async def show_readme():
+async def readme_ui():
     def put_readme():
         embed_fn, llm_fn = get_put_readme_embed_llm_fn()
         query_res = RecursiveRAG(
             verbose=False,
             llm=LangChainLLM(llm_fn()),
             embeddings=LangchainEmbedding(embed_fn()),
-            persist_directory="./knowledge_center/chat/vector_db",
+            persist_directory="./knowledge_center/readme/vector_db",
             docs=SimpleDirectoryReader(input_files=["./README.md"]).load_data(),
         ).query(
             query="""Briefly introduce the repository, give use sections:
@@ -233,6 +235,30 @@ Also list other stuffs, dependencies, 3rd parties supports mentioned in the cont
     st.subheader("About me")
     with st.spinner("## ..."):
         put_readme()
+
+
+async def search_ui():
+    index_name = st.selectbox(
+        "Indices",
+        [
+            name
+            for name in os.listdir(INDEX_PERSIST_DIR)
+            if os.path.isdir(os.path.join(INDEX_PERSIST_DIR, name))
+        ],
+        index=0,
+        key="search_rag_index_selector",
+    )
+    if query := st.text_area("Search...", key="search_query_input"):
+        with st.spinner("Searching..."):
+            search_rag = SubQueriesRAG(
+                llm=LangChainLLM(get_search_llm_fn()()),
+                verbose=True,
+                streaming=True,
+                persist_directory=INDEX_PERSIST_DIR,  # persist_directory/index_name1, persist_directory/index_name2, persist_directory/index_name3 ...
+                index_name=index_name,
+            )
+            query_res = search_rag(message=query)
+            st.write_stream(query_res.response_gen)
 
 
 async def chat_ui():
@@ -278,7 +304,7 @@ async def chat_ui():
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
-    if prompt := st.chat_input("Write..."):
+    if prompt := st.chat_input("Write...", key="chat_input"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -306,13 +332,17 @@ async def main():
             splitter_embeddings = await chunk_and_indexing(file_fullpath_list)
         else:
             st.info("Please upload files")
-    tab_about, tab_dashboard, tab_chat = st.tabs(["About", "Dashboard", "Chat"])
+    tab_about, tab_search, tab_chat, tab_dashboard = st.tabs(
+        ["About", "Search", "Chat", "Dashboard"]
+    )
     with tab_about:
-        await show_readme()
-    with tab_dashboard:
-        await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
+        await readme_ui()
+    with tab_search:
+        await search_ui()
     with tab_chat:
         await chat_ui()
+    with tab_dashboard:
+        await dashboard(*splitter_embeddings if splitter_embeddings else (None, None))
 
 
 if __name__ == "__main__":

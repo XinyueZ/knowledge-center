@@ -2,14 +2,15 @@ import os
 import sys
 from typing import Any, Dict, List, Union
 
-from llama_index.core import VectorStoreIndex
+from llama_index.core import VectorStoreIndex, get_response_synthesizer
+from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.response.schema import RESPONSE_TYPE
-from llama_index.core.chat_engine import CondensePlusContextChatEngine
-from llama_index.core.chat_engine.types import (AGENT_CHAT_RESPONSE_TYPE,
-                                                BaseChatEngine)
-from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
+from llama_index.core.query_engine import (RetrieverQueryEngine,
+                                           SubQuestionQueryEngine)
+from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.retrievers import RecursiveRetriever
+from llama_index.core.tools import QueryEngineTool
 from llama_index.legacy.embeddings.langchain import LangchainEmbedding
 from llama_index.legacy.postprocessor import SentenceTransformerRerank
 from llama_index.llms.langchain.base import LangChainLLM
@@ -26,13 +27,13 @@ from knowledge_center.dashboard.description_crud import (
 from knowledge_center.models.embeddings import embeddings_fn_lookup
 from knowledge_center.models.llms import llms_fn_lookup
 from knowledge_center.rags.base_rag import BaseRAG
-from knowledge_center.utils import (RERANK_TOP_K, SIM_TOP_K, TOKEN_LIMIT,
-                                    VERBOSE, get_nodes_from_vector_index,
+from knowledge_center.utils import (RERANK_TOP_K, SIM_TOP_K, VERBOSE,
+                                    get_nodes_from_vector_index,
                                     lli_from_chroma_store, pretty_print)
 
 
-class ChatRAG(BaseRAG):
-    engine: BaseChatEngine
+class SubQueriesRAG(BaseRAG):
+    engine: BaseQueryEngine
     streaming: bool
 
     def __init__(
@@ -59,33 +60,51 @@ class ChatRAG(BaseRAG):
             node_dict=get_nodes_from_vector_index(index),
             verbose=verbose,
         )
-
-        self.engine = CondensePlusContextChatEngine.from_defaults(
-            retriever=retriever,
+        response_synthesizer = get_response_synthesizer(
+            streaming=streaming,
             llm=llm,
-            node_postprocessors=[
-                SentenceTransformerRerank(
-                    top_n=RERANK_TOP_K, model="BAAI/bge-reranker-base"
-                )
-            ],
-            memory=ChatMemoryBuffer.from_defaults(llm=llm, token_limit=TOKEN_LIMIT),
+            response_mode=ResponseMode.TREE_SUMMARIZE,
+        )
+        query_engine_tool = QueryEngineTool.from_defaults(
+            query_engine=RetrieverQueryEngine.from_args(
+                retriever,
+                response_synthesizer=response_synthesizer,
+                llm=llm,
+                node_postprocessors=[
+                    SentenceTransformerRerank(
+                        top_n=RERANK_TOP_K, model="BAAI/bge-reranker-base"
+                    )
+                ],
+                streaming=streaming,
+                verbose=verbose,
+            )
+        )
+        self.engine = SubQuestionQueryEngine.from_defaults(
+            query_engine_tools=[query_engine_tool],
+            response_synthesizer=response_synthesizer,
+            llm=llm,
             verbose=verbose,
+            use_async=True,
         )
 
-    def __call__(
-        self, *args: Any, **kwds: Any
-    ) -> Union[AGENT_CHAT_RESPONSE_TYPE | RESPONSE_TYPE]:
+    def query(self, message: str) -> RESPONSE_TYPE:
+        return self(message)
+
+    async def query_async(self, message: str) -> RESPONSE_TYPE:
+        return await self(message)
+
+    def __call__(self, *args: Any, **kwds: Any) -> RESPONSE_TYPE:
         message = (
             args[0] if args else kwds["message"] if kwds and "message" in kwds else ""
         )
-        res = self.engine.stream_chat(message)
+        res = self.engine.query(message)
         return res
 
 
 def main():
-    rag = ChatRAG(
+    rag = SubQueriesRAG(
         llm=LangChainLLM(llms_fn_lookup["Ollama/mistral"]()),
-        index_name="chat",
+        index_name="test",
         persist_directory="./vector_db",
         verbose=True,
     )

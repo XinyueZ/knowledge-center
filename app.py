@@ -238,13 +238,17 @@ Also list other stuffs, dependencies, 3rd parties supports mentioned in the cont
 
 
 async def search_ui():
+    if not os.path.exists(INDEX_PERSIST_DIR) or len(os.listdir(INDEX_PERSIST_DIR)) < 1:
+        st.info("No index found")
+        return
+    index_list = [
+        name
+        for name in os.listdir(INDEX_PERSIST_DIR)
+        if os.path.isdir(os.path.join(INDEX_PERSIST_DIR, name))
+    ]
     index_name = st.selectbox(
         "Indices",
-        [
-            name
-            for name in os.listdir(INDEX_PERSIST_DIR)
-            if os.path.isdir(os.path.join(INDEX_PERSIST_DIR, name))
-        ],
+        index_list,
         index=0,
         key="search_rag_index_selector",
     )
@@ -262,7 +266,9 @@ async def search_ui():
 
 
 async def chat_ui():
-    st.subheader("Chat for knowledge")
+    if not os.path.exists(INDEX_PERSIST_DIR) or len(os.listdir(INDEX_PERSIST_DIR)) < 1:
+        st.info("No index found")
+        return
 
     def _chat_index_selection_change():
         if "bot" in st.session_state:
@@ -272,13 +278,14 @@ async def chat_ui():
             del st.session_state["messages"]
             pretty_print("bot", "flushed messages")
 
+    index_list = [
+        name
+        for name in os.listdir(INDEX_PERSIST_DIR)
+        if os.path.isdir(os.path.join(INDEX_PERSIST_DIR, name))
+    ]
     index_name = st.selectbox(
         "Indices",
-        [
-            name
-            for name in os.listdir(INDEX_PERSIST_DIR)
-            if os.path.isdir(os.path.join(INDEX_PERSIST_DIR, name))
-        ],
+        index_list,
         index=0,
         key="chat_index_selector",
         on_change=_chat_index_selection_change,

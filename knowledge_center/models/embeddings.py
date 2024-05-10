@@ -1,7 +1,7 @@
 from typing import Callable, Dict
 
 from langchain_cohere import CohereEmbeddings
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.embeddings.sentence_transformer import \
     SentenceTransformerEmbeddings
 from langchain_core.embeddings import Embeddings

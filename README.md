@@ -15,11 +15,13 @@ The purpose of this repository is that we demonstrate how to ingest data from va
 
 # RAG
 
-Although this repo is mainly used for "knowledge" ingestion, chunking and indexing, for example, the description of the index or simple Q&A (chat with your doc) uses RAG, trying to implement some of the latest and very popular RAG methods.
+In the experiment, RAG is used in many places, such as search, chat, and smart update of description. There are various implementations for RAG, in the `rags` package. They may not all be used, but can be frequently used as replacements.
 
-Also, when storing the index, try to follow the more popular topics.
+<table>
+<tr><td><img alt="RAG"  src="https://github.com/XinyueZ/knowledge-center/blob/main/assets/rag.png" width="46%" height="45%"/></td><td><img alt="RAG"  src="https://github.com/XinyueZ/knowledge-center/blob/main/assets/rag2.png" width="60%" height="45%"/></td></tr>  
+</table>
 
-<img alt="RAG"  src="https://github.com/XinyueZ/knowledge-center/blob/main/assets/rag.png" width="45%" height="45%">
+
 
 # Setup
 

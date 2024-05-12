@@ -13,6 +13,21 @@ The purpose of this repository is that we demonstrate how to ingest data from va
 - <img src="https://user-images.githubusercontent.com/891664/227103090-6624bf7d-9524-4e05-9d2c-c28d5d451481.png" alt="Chroma logo"  width="25%"></img>
 - <img alt="ollama"  src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7" width="5%" height="5%"> Ollama
 
+# Chunking Principle
+
+- Chunking Necessity: Vector databases need documents split
+into chunks for retrieval and prompt generation.
+- Query Result Variability: The same query will return different
+content depending on how the document is chunked.
+- Even Size Chunks: The easiest way is to split the document into
+roughly even size chunks. This can result in similar content
+getting split across chunks.
+- Chunking by Atomic Elements: By identifying atomic elements,
+you can chunk by combining elements rather than splitting raw
+text.
+  - Results in more coherent chunks
+  - Example: combining content under the same section header into the same chunk.
+
 # RAG
 
 In the experiment, RAG is used in many places, such as search, chat, and smart update of description. There are various implementations for RAG, in the `rags` package. They may not all be used, but can be frequently used as replacements.

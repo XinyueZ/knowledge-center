@@ -13,6 +13,10 @@ The purpose of this repository is that we demonstrate how to ingest data from va
 - <img src="https://user-images.githubusercontent.com/891664/227103090-6624bf7d-9524-4e05-9d2c-c28d5d451481.png" alt="Chroma logo"  width="25%"></img>
 - <img alt="ollama"  src="https://github.com/ollama/ollama/assets/3325447/0d0b44e2-8f4a-4e99-9b52-a5c1c741c8f7" width="5%" height="5%"> Ollama
 
+##### [Awesome LLMs applications and experiments](https://github.com/XinyueZ/chat-your-doc)
+
+A repository demonstrating various approaches for RAG, Chunking, and other LLM-related algorithms.
+
 # Chunking Principle
 
 - Chunking Necessity: Vector databases need documents split

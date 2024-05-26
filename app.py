@@ -6,12 +6,6 @@ from typing import List, Tuple
 
 import nest_asyncio
 import streamlit as st
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from llama_index.core import SimpleDirectoryReader
-from llama_index.legacy.embeddings.langchain import LangchainEmbedding
-from llama_index.llms.langchain.base import LangChainLLM
-from tqdm.asyncio import tqdm
-
 from knowledge_center.chat import get_chat_llm_fn
 from knowledge_center.chunkers import get_chunker_fn_selections
 from knowledge_center.dashboard import get_smart_update_llm_fn
@@ -30,6 +24,11 @@ from knowledge_center.utils import (CHUNK_OVERLAP_DEFAULT,
                                     CHUNK_OVERLAP_MIN_VALUE,
                                     CHUNK_SIZE_DEFAULT, CHUNK_SIZE_MIN_VALUE,
                                     INDEX_PERSIST_DIR, pretty_print)
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from llama_index.core import SimpleDirectoryReader
+from llama_index.legacy.embeddings.langchain import LangchainEmbedding
+from llama_index.llms.langchain.base import LangChainLLM
+from tqdm.asyncio import tqdm
 
 nest_asyncio.apply()
 
@@ -65,7 +64,13 @@ async def chunk_and_indexing(file_fullpath_list: List[str]) -> Tuple[str, str]:
         chunker = chunker_fn_selections[chunker_selector][0](chunk_overlap, chunk_size)
         splitter_name = chunker_fn_selections[chunker_selector][1]
         embeddings_name = chunker_fn_selections[chunker_selector][2]
-        index_name = st.text_input("Index name", placeholder="index name").strip()
+        first_filefullpath = file_fullpath_list[0]
+        filename_noext = "_".join(
+            os.path.splitext(os.path.basename(first_filefullpath))[0].split(" ")
+        )
+        index_name = st.text_input(
+            "Index name", filename_noext, placeholder="index name"
+        ).strip()
         if index_name is None or index_name == "":
             st.error("Please provide a name for the collection")
             return

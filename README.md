@@ -132,3 +132,13 @@ export HUGGING_FACE_TOKEN="hf_........."
 export COHERE_API_KEY="zFiHtBT........."
 export CO_API_KEY="zFiHtBT........."
 ```
+
+# Star History
+
+<br>
+<div align="left">
+
+<img src="https://api.star-history.com/svg?repos=XinyueZ/knowledge-center&type=Date" width="500px">
+
+</div>
+<br>
